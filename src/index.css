@@ -1,0 +1,39 @@
+/* Tailwind v4 - Custom colors using @theme */
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@theme {
+  --color-navy-50: #f8fafc;
+  --color-navy-100: #f1f5f9;
+  --color-navy-200: #e2e8f0;
+  --color-navy-300: #cbd5e1;
+  --color-navy-400: #94a3b8;
+  --color-navy-500: #64748b;
+  --color-navy-600: #475569;
+  --color-navy-700: #334155;
+  --color-navy-800: #1e293b;
+  --color-navy-900: #0f172a;
+  --color-navy-950: #020617;
+  
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  
+  --color-orange-500: #f97316;
+  --color-orange-400: #fb923c;
+  
+  --font-family-sans: Inter, system-ui, sans-serif;
+}
+
+body {
+  @apply bg-navy-50 text-navy-900 font-sans;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  @apply font-sans;
+}
