@@ -27,61 +27,29 @@ export const useProfessorStats = () => {
       try {
         setLoading(true)
         
-        // Obtener estadísticas reales del profesor actual
         const [
           projectsResult,
+          publishedResult,
+          draftResult,
           resourcesResult,
           publicationsResult,
           activitiesResult
         ] = await Promise.all([
-          // Total de proyectos
-          supabase
-            .from('projects')
-            .select('id', { count: 'exact' })
-            .eq('professor_id', user.id),
-            
-          // Proyectos publicados
-          supabase
-            .from('projects')
-            .select('id', { count: 'exact' })
-            .eq('professor_id', user.id)
-            .eq('status', 'published'),
-            
-          // Proyectos en borrador
-          supabase
-            .from('projects')
-            .select('id', { count: 'exact' })
-            .eq('professor_id', user.id)
-            .eq('status', 'draft'),
-            
-          // Recursos
-          supabase
-            .from('resources')
-            .select('id', { count: 'exact' })
-            .eq('professor_id', user.id),
-            
-          // Publicaciones
-          supabase
-            .from('publications')
-            .select('id', { count: 'exact' })
-            .eq('professor_id', user.id),
-            
-          // Actividades
-          supabase
-            .from('activities')
-            .select('id', { count: 'exact' })
-            .eq('professor_id', user.id)
+          supabase.from('projects').select('id', { count: 'exact' }).eq('professor_id', user.id),
+          supabase.from('projects').select('id', { count: 'exact' }).eq('professor_id', user.id).eq('status', 'published'),
+          supabase.from('projects').select('id', { count: 'exact' }).eq('professor_id', user.id).eq('status', 'draft'),
+          supabase.from('resources').select('id', { count: 'exact' }).eq('professor_id', user.id),
+          supabase.from('publications').select('id', { count: 'exact' }).eq('professor_id', user.id),
+          supabase.from('activities').select('id', { count: 'exact' }).eq('professor_id', user.id),
         ])
         
-        if (projectsResult.error) throw projectsResult.error
-        if (resourcesResult.error) throw resourcesResult.error
-        if (publicationsResult.error) throw publicationsResult.error
-        if (activitiesResult.error) throw activitiesResult.error
+        const errors = [projectsResult, publishedResult, draftResult, resourcesResult, publicationsResult, activitiesResult].filter(r => r.error)
+        if (errors.length > 0) throw errors[0].error
         
         setStats({
           projects: projectsResult.count ?? 0,
-          published: resourcesResult.count ?? 0,
-          drafts: activitiesResult.count ?? 0,
+          published: publishedResult.count ?? 0,
+          drafts: draftResult.count ?? 0,
           resources: resourcesResult.count ?? 0,
           publications: publicationsResult.count ?? 0,
           activities: activitiesResult.count ?? 0

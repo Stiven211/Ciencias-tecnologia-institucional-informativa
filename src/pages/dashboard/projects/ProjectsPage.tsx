@@ -1,16 +1,19 @@
 import { useState } from 'react'
-import { Plus, Search } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Search } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useProjects } from '../../../hooks/useProjects'
 import { ProjectCard } from '../../../components/projects/ProjectCard'
 import { EmptyProjects } from '../../../components/projects/EmptyProjects'
 import { DeleteProjectModal } from '../../../components/projects/DeleteProjectModal'
 import { LoadingSpinnerCentered } from '../../../components/ui/LoadingSpinner'
 import { Pagination } from '../../../components/ui/Pagination'
+import { Button } from '../../../components/ui/Button'
+import { Input } from '../../../components/ui/Input'
 import { projectsService } from '../../../services/projects.service'
 import type { Project } from '../../../types'
 
 export const ProjectsPage = () => {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; project?: Project }>({ open: false })
@@ -25,7 +28,7 @@ export const ProjectsPage = () => {
     error,
     refetch
   } = useProjects({
-    professorId: undefined, // Obtener todos los proyectos del profesor actual
+    professorId: undefined,
     limit: itemsPerPage,
     searchTerm,
     filterStatus
@@ -33,12 +36,12 @@ export const ProjectsPage = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
-    setCurrentPage(1) // Reset a la primera página al buscar
+    setCurrentPage(1)
   }
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilterStatus(e.target.value)
-    setCurrentPage(1) // Reset a la primera página al cambiar filtro
+    setCurrentPage(1)
   }
 
   const handlePageChange = (page: number) => {
@@ -70,24 +73,20 @@ export const ProjectsPage = () => {
           <h1 className="text-2xl font-bold text-navy-900">Mis Proyectos</h1>
           <p className="text-navy-600">{totalCount} proyectos en total</p>
         </div>
-        <Link
-          to="/dashboard/projects/new"
-          className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+        <Button
+          onClick={() => navigate('/dashboard/projects/new')}
         >
-          <Plus size={20} className="mr-2" />
           Nuevo proyecto
-        </Link>
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" size={20} />
-          <input
-            type="text"
+          <Input
+            icon={<Search size={20} />}
             placeholder="Buscar proyectos..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-4 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
         <select

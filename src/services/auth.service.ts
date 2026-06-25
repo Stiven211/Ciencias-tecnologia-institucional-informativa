@@ -12,9 +12,27 @@ const buildUserFromProfile = (profile: Profile): User => ({
 })
 
 export const authService = {
+  async getInstitutionalUsersCount() {
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact' })
+
+    if (error) throw error
+    return count ?? 0
+  },
+
   async signUp(email: string, password: string, fullName: string) {
     console.log('[authService] Starting signUp for:', email)
-    
+
+    const MAX_INSTITUTIONAL_USERS = 7
+    const { count } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact' })
+
+    if ((count ?? 0) >= MAX_INSTITUTIONAL_USERS) {
+      throw new Error('Se alcanzó el límite de usuarios institucionales. Contacte al administrador.')
+    }
+
     // Step 1: Sign up the user
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -38,7 +56,6 @@ export const authService = {
       })
       if (signInError) {
         console.error('[authService] signIn to get session error:', signInError)
-        // If we can't sign in, we cannot proceed to create profile because we need session for RLS
         throw signInError
       }
       session = signInData.session

@@ -37,15 +37,14 @@ export const FeaturedProjects = () => {
     </div>
   )
 
-  return (
+return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {projects.map((project) => (
-        <Link
-          key={project.id}
-          to={`/projects/${project.slug}`}
-          className="group"
-        >
-          <div className="bg-white rounded-lg overflow-hidden shadow-hover hover:shadow-lg transition-shadow">
+        <div key={project.id} className="group">
+          <Link
+            to={`/projects/${project.slug}`}
+            className="block bg-white rounded-lg overflow-hidden shadow-hover hover:shadow-lg transition-shadow"
+          >
             {project.cover_image && (
               <img
                 src={project.cover_image}
@@ -76,7 +75,7 @@ export const FeaturedProjects = () => {
                         </span>
                       </div>
                     )}
-                    <span className="text-navy-700 text-sm">
+                    <span className="text-navy-700 text-sm font-medium cursor-default">
                       {project.professor.full_name}
                     </span>
                   </>
@@ -95,8 +94,16 @@ export const FeaturedProjects = () => {
                 </div>
               )}
             </div>
-          </div>
-        </Link>
+          </Link>
+          {project.professor && (
+            <Link 
+              to={`/profesor/${project.professor_id}`}
+              className="block mt-2 text-navy-700 text-sm font-medium hover:text-green-600"
+            >
+              Ver perfil de {project.professor.full_name}
+            </Link>
+          )}
+        </div>
       ))}
     </div>
   )

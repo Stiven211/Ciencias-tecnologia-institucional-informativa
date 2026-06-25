@@ -53,6 +53,22 @@ export const ProjectDetailPage = () => {
           </div>
         </div>
       )}
+
+      {project.gallery_images && project.gallery_images.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-navy-900 mb-3">Galería de imágenes</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {project.gallery_images.map((imageUrl: string, i: number) => (
+              <img
+                key={i}
+                src={imageUrl}
+                alt={`Galería ${i + 1}`}
+                className="w-full h-32 object-cover rounded-lg"
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -25,6 +25,7 @@ CREATE TABLE projects (
   status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
   cover_image TEXT,
   technologies TEXT[],
+  categories TEXT[] CHECK (categories <@ ARRAY['STEM', 'Robótica', 'Programación', 'Videojuegos', 'Ciencias Naturales', 'Tecnología', 'Electrónica', 'IA', 'Matemáticas', 'Física']),
   gallery_images TEXT[],
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -11,6 +11,8 @@ export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const { user, hasPermission, hasRole } = useAuthStore()
+  
+  console.log('[Sidebar] rendered, user:', user?.id, user?.role)
 
   const visibleNav = navigation.filter(item => {
     if (!hasPermission(item.permission)) return false

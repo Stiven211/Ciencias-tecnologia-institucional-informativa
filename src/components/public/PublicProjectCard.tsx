@@ -7,11 +7,11 @@ interface PublicProjectCardProps {
 
 export const PublicProjectCard = ({ project }: PublicProjectCardProps) => {
   return (
-    <Link
-      to={`/projects/${project.slug}`}
-      className="group block hover:shadow-lg transition-shadow"
-    >
-      <div className="bg-white rounded-lg overflow-hidden">
+    <div className="group block hover:shadow-lg transition-shadow">
+      <Link
+        to={`/projects/${project.slug}`}
+        className="block bg-white rounded-lg overflow-hidden"
+      >
         {project.cover_image && (
           <img
             src={project.cover_image}
@@ -20,28 +20,6 @@ export const PublicProjectCard = ({ project }: PublicProjectCardProps) => {
           />
         )}
         <div className="p-6">
-          <div className="flex items-center space-x-3 mb-3">
-            {project.professor && (
-              <>
-                {project.professor.avatar_url ? (
-                  <img
-                    src={project.professor.avatar_url}
-                    alt={project.professor.full_name}
-                    className="h-10 w-10 rounded-full"
-                  />
-                ) : (
-                  <div className="h-10 w-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-green-500">
-                      {project.professor.full_name?.charAt(0)}
-                    </span>
-                  </div>
-                )}
-                <span className="text-navy-700 font-medium">
-                  {project.professor.full_name}
-                </span>
-              </>
-            )}
-          </div>
           <h3 className="text-navy-900 font-semibold mb-2 line-clamp-2 hover:text-green-600 transition-colors group-hover:text-green-600">
             {project.title}
           </h3>
@@ -70,7 +48,15 @@ export const PublicProjectCard = ({ project }: PublicProjectCardProps) => {
             </span>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+      {project.professor && (
+        <Link 
+          to={`/profesor/${project.professor_id}`}
+          className="block mt-2 text-navy-700 font-medium text-sm hover:text-green-600"
+        >
+          Por {project.professor.full_name}
+        </Link>
+      )}
+    </div>
   )
 }

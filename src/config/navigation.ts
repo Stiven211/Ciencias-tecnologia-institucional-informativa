@@ -1,11 +1,10 @@
-import { 
-  LayoutDashboard, 
-  FolderOpen, 
-  User,
-  Settings
+import {
+  LayoutDashboard,
+  FolderOpen,
+  Shield,
+  User
 } from 'lucide-react'
-import type { Permission } from './permissions'
-import type { UserRole } from './permissions'
+import type { Permission, UserRole } from './permissions'
 
 export interface NavItem {
   name: string
@@ -24,21 +23,21 @@ export const navigation: NavItem[] = [
   },
   { 
     name: 'Mis Proyectos', 
-    href: '/projects', 
+    href: '/dashboard/projects', 
     icon: FolderOpen, 
     permission: 'create_project'
   },
   { 
-    name: 'Profesores', 
-    href: '/teachers', 
+    name: 'Mi Perfil', 
+    href: '/dashboard/profile', 
     icon: User, 
-    permission: 'view_public_content' 
+    permission: 'view_public_content'
   },
   { 
-    name: 'Configuración', 
-    href: '/settings', 
-    icon: Settings, 
-    permission: 'manage_teachers',
+    name: 'Profesores', 
+    href: '/dashboard/admin', 
+    icon: Shield, 
+    permission: 'manage_all_projects',
     roles: ['admin']
   },
 ]

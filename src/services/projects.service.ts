@@ -9,6 +9,7 @@ export const projectsService = {
     professorId?: string;
     page?: number;
   }) {
+    console.log('[projectsService] getProjects called with options:', options)
     let query = supabase
       .from('projects')
       .select(`
@@ -18,6 +19,7 @@ export const projectsService = {
 
     // Apply filters
     if (options?.professorId) {
+      console.log('[projectsService] Filtering by professorId:', options.professorId)
       query = query.eq('professor_id', options.professorId)
     }
     
@@ -45,7 +47,11 @@ export const projectsService = {
 
     const { data, error, count } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error('[projectsService] getProjects error:', error)
+      throw error
+    }
+    console.log('[projectsService] getProjects result count:', data?.length)
     return { data: data as Project[], count }
   },
 
@@ -78,17 +84,23 @@ export const projectsService = {
   },
 
   async createProject(project: ProjectInsert) {
+    console.log('[projectsService] createProject called with:', project)
     const { data, error } = await supabase
       .from('projects')
       .insert([project])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('[projectsService] createProject error:', error)
+      throw error
+    }
+    console.log('[projectsService] createProject success, id:', data?.id)
     return data as Project
   },
 
   async updateProject(id: string, project: Partial<ProjectInsert>) {
+    console.log('[projectsService] updateProject called for id:', id, 'data:', project)
     const { data, error } = await supabase
       .from('projects')
       .update(project)
@@ -96,17 +108,26 @@ export const projectsService = {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('[projectsService] updateProject error:', error)
+      throw error
+    }
+    console.log('[projectsService] updateProject success, id:', data?.id)
     return data as Project
   },
 
   async deleteProject(id: string) {
+    console.log('[projectsService] deleteProject called for id:', id)
     const { error } = await supabase
       .from('projects')
       .delete()
       .eq('id', id)
 
-    if (error) throw error
+    if (error) {
+      console.error('[projectsService] deleteProject error:', error)
+      throw error
+    }
+    console.log('[projectsService] deleteProject success, id:', id)
   },
 
   async uploadCoverImage(file: File, projectId: string) {
@@ -114,16 +135,44 @@ export const projectsService = {
     const fileName = `${projectId}-${Date.now()}.${fileExt}`
     const filePath = `covers/${fileName}`
 
+    console.log('[projectsService] Uploading cover image to bucket "covers":', filePath)
     const { error } = await supabase.storage
-      .from('projects')
+      .from('covers')
       .upload(filePath, file, { upsert: true })
 
-    if (error) throw error
+    if (error) {
+      console.error('[projectsService] Cover image upload error:', error)
+      throw error
+    }
 
     const { data: publicUrl } = supabase.storage
-      .from('projects')
+      .from('covers')
       .getPublicUrl(filePath)
 
+    console.log('[projectsService] Cover image public URL:', publicUrl.publicUrl)
+    return publicUrl.publicUrl
+  },
+
+  async uploadGalleryImage(file: File, projectId: string) {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${projectId}-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`
+    const filePath = `gallery/${fileName}`
+
+    console.log('[projectsService] Uploading gallery image to bucket "covers":', filePath)
+    const { error } = await supabase.storage
+      .from('covers')
+      .upload(filePath, file)
+
+    if (error) {
+      console.error('[projectsService] Gallery image upload error:', error)
+      throw error
+    }
+
+    const { data: publicUrl } = supabase.storage
+      .from('covers')
+      .getPublicUrl(filePath)
+
+    console.log('[projectsService] Gallery image public URL:', publicUrl.publicUrl)
     return publicUrl.publicUrl
   }
 }

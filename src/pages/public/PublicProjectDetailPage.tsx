@@ -1,10 +1,10 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { publicService } from '../../services/public.service'
 import { RelatedProjects } from '../../components/public/RelatedProjects'
 import type { Project } from '../../types'
-import { PublicNavbar } from '../../components/public/PublicNavbar'
-import { PublicFooter } from '../../components/public/PublicFooter'
+import { PublicLayout } from '../../components/layout/PublicLayout'
 
 export const PublicProjectDetailPage = () => {
   const { slug } = useParams<{ slug: string }>()
@@ -32,48 +32,33 @@ export const PublicProjectDetailPage = () => {
     loadProject()
   }, [slug])
 
-  if (loading) return (
-    <>
-      <PublicNavbar />
-      <main className="min-h-[calc(100vh-200px)] flex items-center justify-center">
-        <div className="animate-pulse">
-          <div className="h-96 w-full bg-navy-50 rounded-lg"></div>
-        </div>
-      </main>
-      <PublicFooter />
-    </>
-  )
-
-  if (error) return (
-    <>
-      <PublicNavbar />
-      <main className="min-h-[calc(100vh-200px)] flex items-center justify-center px-6">
-        <div className="text-center text-red-600 bg-red-50 rounded-lg p-8">
-          <h3 className="text-xl font-bold mb-4">Error al cargar el proyecto</h3>
-          <p>{error}</p>
-        </div>
-      </main>
-      <PublicFooter />
-    </>
-  )
-
-  if (!project) return (
-    <>
-      <PublicNavbar />
-      <main className="min-h-[calc(100vh-200px)] flex items-center justify-center px-6">
-        <div className="text-center text-navy-500">
-          <h3 className="text-xl font-bold mb-4">Proyecto no encontrado</h3>
-          <p>El proyecto solicitado no existe o no está disponible.</p>
-        </div>
-      </main>
-      <PublicFooter />
-    </>
-  )
-
   return (
-    <>
-      <PublicNavbar />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <PublicLayout>
+      {loading && (
+        <main className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+          <div className="animate-pulse">
+            <div className="h-96 w-full bg-navy-50 rounded-lg"></div>
+          </div>
+        </main>
+      )}
+      {error && !loading && (
+        <main className="min-h-[calc(100vh-200px)] flex items-center justify-center px-6">
+          <div className="text-center text-red-600 bg-red-50 rounded-lg p-8">
+            <h3 className="text-xl font-bold mb-4">Error al cargar el proyecto</h3>
+            <p>{error}</p>
+          </div>
+        </main>
+      )}
+      {!project && !loading && !error && (
+        <main className="min-h-[calc(100vh-200px)] flex items-center justify-center px-6">
+          <div className="text-center text-navy-500">
+            <h3 className="text-xl font-bold mb-4">Proyecto no encontrado</h3>
+            <p>El proyecto solicitado no existe o no está disponible.</p>
+          </div>
+        </main>
+      )}
+      {project && !loading && !error && (
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <article className="prose prose-navy max-w-none">
           {project.cover_image && (
             <img
@@ -104,7 +89,12 @@ export const PublicProjectDetailPage = () => {
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold">{project.professor.full_name}</p>
+                  <Link 
+                    to={`/profesor/${project.professor_id}`}
+                    className="font-semibold hover:text-green-600 block"
+                  >
+                    {project.professor.full_name}
+                  </Link>
                   <p className="text-sm">{project.professor.specialization || 'Especialista en área'}</p>
                 </div>
               </>
@@ -181,7 +171,7 @@ export const PublicProjectDetailPage = () => {
           <RelatedProjects project={project} />
         </article>
       </main>
-      <PublicFooter />
-    </>
+      )}
+    </PublicLayout>
   )
 }

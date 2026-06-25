@@ -8,6 +8,8 @@ INSERT INTO storage.buckets (id, name, public) VALUES
   ('publications', 'publications', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Note: Cover images are uploaded to the 'covers' bucket as configured in projects.service.ts
+
 -- =====================================================
 -- AVATARS BUCKET POLICIES
 -- =====================================================

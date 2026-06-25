@@ -1,12 +1,13 @@
-import React from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate, Link } from 'react-router-dom'
 import { useToast } from '../../components/ui/ToastContext'
 import { Button } from '../../components/ui/Button'
+import { Input } from '../../components/ui/Input'
 import { Mail } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import { useState } from 'react'
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'El email es requerido').email('Email inválido'),
@@ -17,7 +18,7 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 export const ForgotPasswordPage = () => {
   const navigate = useNavigate()
   const { success, error: showError } = useToast()
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = useState(false)
 
   const {
     register,
@@ -63,23 +64,14 @@ export const ForgotPasswordPage = () => {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-navy-700 mb-1">
-                Email institucional
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" size={18} />
-                <input
-                  type="email"
-                  {...register('email')}
-                  className="w-full pl-10 pr-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="tu@email.com"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
-              )}
-            </div>
+            <Input
+              label="Email institucional"
+              type="email"
+              icon={<Mail size={18} />}
+              placeholder="tu@email.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
 
             <Button
               type="submit"

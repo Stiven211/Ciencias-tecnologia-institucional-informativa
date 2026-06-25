@@ -4,6 +4,7 @@ import type { Project } from '../types'
 interface PublicProjectsFilters {
   search?: string
   technologies?: string[]
+  categories?: string[]
 }
 
 export const publicService = {
@@ -37,8 +38,11 @@ export const publicService = {
     }
 
     if (filters.technologies && filters.technologies.length > 0) {
-      // For PostgreSQL array contains
       query.contains('technologies', filters.technologies)
+    }
+
+    if (filters.categories && filters.categories.length > 0) {
+      query.overlaps('categories', filters.categories)
     }
 
     const { data, error } = await query.order('created_at', { ascending: false })

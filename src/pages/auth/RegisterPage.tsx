@@ -5,7 +5,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../components/ui/ToastContext'
 import { Button } from '../../components/ui/Button'
+import { Input } from '../../components/ui/Input'
 import { User, Mail, Lock } from 'lucide-react'
+import { useInstitutionalUsers } from '../../hooks/useInstitutionalUsers'
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -23,6 +25,7 @@ export const RegisterPage = () => {
   const navigate = useNavigate()
   const { register: registerUser, loading, error } = useAuth()
   const { success, error: showError } = useToast()
+  const { canRegister, loading: checkingLimit } = useInstitutionalUsers()
 
   const {
     register,
@@ -31,6 +34,32 @@ export const RegisterPage = () => {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   })
+
+  if (checkingLimit) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    )
+  }
+
+  if (!canRegister) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <h2 className="text-2xl font-bold text-navy-900 mb-4">Registro no disponible</h2>
+            <p className="text-navy-600 mb-6">
+              Se alcanzó el límite de usuarios institucionales. Contacte al administrador.
+            </p>
+            <Link to="/login">
+              <Button variant="primary">Volver al inicio de sesión</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -55,77 +84,40 @@ export const RegisterPage = () => {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-navy-700 mb-1">
-                Nombre completo
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" size={18} />
-                <input
-                  type="text"
-                  {...register('fullName')}
-                  className="w-full pl-10 pr-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Juan Pérez García"
-                />
-              </div>
-              {errors.fullName && (
-                <p className="text-sm text-red-600 mt-1">{errors.fullName.message}</p>
-              )}
-            </div>
+            <Input
+              label="Nombre completo"
+              icon={<User size={18} />}
+              placeholder="Juan Pérez García"
+              error={errors.fullName?.message}
+              {...register('fullName')}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-navy-700 mb-1">
-                Email institucional
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" size={18} />
-                <input
-                  type="email"
-                  {...register('email')}
-                  className="w-full pl-10 pr-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="nombre@universidad.edu"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
-              )}
-            </div>
+            <Input
+              label="Email institucional"
+              type="email"
+              icon={<Mail size={18} />}
+              placeholder="nombre@universidad.edu"
+              error={errors.email?.message}
+              {...register('email')}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-navy-700 mb-1">
-                Contraseña
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" size={18} />
-                <input
-                  type="password"
-                  {...register('password')}
-                  className="w-full pl-10 pr-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="••••••••"
-                />
-              </div>
-              {errors.password && (
-                <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
-              )}
-            </div>
+            <Input
+              label="Contraseña"
+              type="password"
+              icon={<Lock size={18} />}
+              placeholder="••••••••"
+              error={errors.password?.message}
+              {...register('password')}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-navy-700 mb-1">
-                Confirmar contraseña
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" size={18} />
-                <input
-                  type="password"
-                  {...register('confirmPassword')}
-                  className="w-full pl-10 pr-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="••••••••"
-                />
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>
-              )}
-            </div>
+            <Input
+              label="Confirmar contraseña"
+              type="password"
+              icon={<Lock size={18} />}
+              placeholder="••••••••"
+              error={errors.confirmPassword?.message}
+              {...register('confirmPassword')}
+            />
 
             {error && (
               <p className="text-sm text-red-600">{error}</p>

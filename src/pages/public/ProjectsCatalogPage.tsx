@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import { ProjectsFilters } from '../../components/public/ProjectsFilters'
 import { PublicProjectsGrid } from '../../components/public/PublicProjectsGrid'
-import { PublicNavbar } from '../../components/public/PublicNavbar'
-import { PublicFooter } from '../../components/public/PublicFooter'
+import { PublicLayout } from '../../components/layout/PublicLayout'
 
 export const ProjectsCatalogPage = () => {
-  const [filters, setFilters] = useState<{ search: string; technologies: string[] }>({
+  const [filters, setFilters] = useState<{ search: string; technologies: string[]; categories: string[] }>({
     search: '',
-    technologies: []
+    technologies: [],
+    categories: []
   })
 
   return (
-    <>
-      <PublicNavbar />
+    <PublicLayout>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
           <div className="text-center">
@@ -33,7 +32,6 @@ export const ProjectsCatalogPage = () => {
           </div>
         </div>
       </main>
-      <PublicFooter />
-    </>
+    </PublicLayout>
   )
 }

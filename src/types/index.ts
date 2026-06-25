@@ -21,14 +21,23 @@ export interface Project {
   content?: string
   status?: 'draft' | 'published' | 'archived'
   cover_image?: string
-  technologies?: string[]
   gallery_images?: string[]
+  technologies?: string[]
+  categories?: string[]
   professor?: Profile
   created_at: string
   updated_at: string
 }
 
-export type ProjectInsert = Omit<Project, 'id' | 'created_at' | 'updated_at' | 'professor' | 'gallery_images'>
+export interface ProjectFilters {
+  search?: string
+  status?: 'draft' | 'published' | 'archived' | 'all'
+  technologies?: string[]
+  categories?: string[]
+  professorId?: string
+}
+
+export type ProjectInsert = Omit<Project, 'id' | 'created_at' | 'updated_at' | 'professor'>
 
 export interface Resource {
   id: string

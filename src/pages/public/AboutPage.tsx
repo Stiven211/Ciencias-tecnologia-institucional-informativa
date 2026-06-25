@@ -1,10 +1,8 @@
-import { PublicNavbar } from '../../components/public/PublicNavbar'
-import { PublicFooter } from '../../components/public/PublicFooter'
+import { PublicLayout } from '../../components/layout/PublicLayout'
 
 export const AboutPage = () => {
   return (
-    <>
-      <PublicNavbar />
+    <PublicLayout>
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold text-navy-900 mb-8">
           Sobre Nosotros
@@ -46,8 +44,7 @@ export const AboutPage = () => {
           </ul>
         </div>
       </main>
-      <PublicFooter />
-    </>
+    </PublicLayout>
   )
 }
 

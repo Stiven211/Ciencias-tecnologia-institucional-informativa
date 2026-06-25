@@ -1,20 +1,17 @@
-import { PublicNavbar } from '../../components/public/PublicNavbar'
+import { PublicLayout } from '../../components/layout/PublicLayout'
 import { HeroSection } from '../../components/public/HeroSection'
 import { PublicStats } from '../../components/public/PublicStats'
 import { FeaturedProjects } from '../../components/public/FeaturedProjects'
-import { PublicFooter } from '../../components/public/PublicFooter'
 
 export const HomePage = () => {
   return (
-    <>
-      <PublicNavbar />
+    <PublicLayout>
       <main>
         <HeroSection />
         <PublicStats />
         <FeaturedProjects />
       </main>
-      <PublicFooter />
-    </>
+    </PublicLayout>
   )
 }
 export default HomePage

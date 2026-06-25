@@ -2,9 +2,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { DashboardHome } from './pages/dashboard/DashboardHome'
 import { ProjectsPage } from './pages/dashboard/projects/ProjectsPage'
+import { ProfilePage } from './pages/dashboard/ProfilePage'
 import { CreateProjectPage } from './pages/dashboard/projects/CreateProjectPage'
 import { EditProjectPage } from './pages/dashboard/projects/EditProjectPage'
 import { ProjectDetailPage } from './pages/dashboard/projects/ProjectDetailPage'
+import { AdminDashboardPage } from './pages/dashboard/AdminDashboardPage'
+import { ProfessorProfilePage } from './pages/public/ProfessorProfilePage'
 import { HomePage } from './pages/public/HomePage'
 import { AboutPage } from './pages/public/AboutPage'
 import { ProjectsCatalogPage } from './pages/public/ProjectsCatalogPage'
@@ -28,6 +31,7 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/projects" element={<ProjectsCatalogPage />} />
             <Route path="/projects/:slug" element={<PublicProjectDetailPage />} />
+            <Route path="/profesor/:id" element={<ProfessorProfilePage />} />
             
             {/* Auth routes - only for non-authenticated users */}
             <Route path="/login" element={
@@ -42,22 +46,23 @@ function App() {
             } />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             
-            {/* Dashboard routes - protected */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<DashboardHome />} />
-              <Route path="projects" element={<ProjectsPage />} />
-              <Route 
-                path="projects/new" 
-                element={
-                  <ProtectedRoute requiredPermissions={['create_project']}>
-                    <CreateProjectPage />
-                  </ProtectedRoute>
-                } 
-              />
+{/* Dashboard routes - protected */}
+             <Route path="/dashboard" element={
+               <ProtectedRoute>
+                 <DashboardLayout />
+               </ProtectedRoute>
+             }>
+               <Route index element={<DashboardHome />} />
+               <Route path="projects" element={<ProjectsPage />} />
+               <Route path="profile" element={<ProfilePage />} />
+               <Route 
+                 path="projects/new" 
+                 element={
+                   <ProtectedRoute requiredPermissions={['create_project']}>
+                     <CreateProjectPage />
+                   </ProtectedRoute>
+                 } 
+               />
               <Route 
                 path="projects/:id" 
                 element={<ProjectDetailPage />} 
@@ -67,6 +72,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermissions={['edit_own_project']}>
                     <EditProjectPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="admin" 
+                element={
+                  <ProtectedRoute requiredPermissions={['manage_all_projects']}>
+                    <AdminDashboardPage />
                   </ProtectedRoute>
                 } 
               />

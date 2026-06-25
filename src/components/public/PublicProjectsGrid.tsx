@@ -7,6 +7,7 @@ interface PublicProjectsGridProps {
   filters: {
     search: string
     technologies: string[]
+    categories: string[]
   }
 }
 

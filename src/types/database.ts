@@ -20,6 +20,7 @@ export interface Project {
   status: 'draft' | 'published' | 'archived'
   cover_image: string | null
   technologies: string[] | null
+  categories: string[] | null
   gallery_images: string[] | null
   professor?: Profile
   created_at: string

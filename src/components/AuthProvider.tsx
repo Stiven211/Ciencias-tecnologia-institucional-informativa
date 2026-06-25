@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuthStore } from '../store/authStore'
 
 interface AuthProviderProps {
@@ -6,22 +6,16 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const { initialize, isLoading } = useAuthStore()
+  const initialize = useAuthStore((state) => state.initialize)
+  const initializedRef = useRef(false)
 
   useEffect(() => {
+    if (initializedRef.current) return
+    initializedRef.current = true
+
+    console.log('[AuthProvider] initializing auth')
     initialize()
   }, [initialize])
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-navy-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-          <p className="mt-4 text-navy-600">Iniciando sesión...</p>
-        </div>
-      </div>
-    )
-  }
 
   return <>{children}</>
 }
