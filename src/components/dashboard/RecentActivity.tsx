@@ -88,24 +88,27 @@ export const RecentActivity = ({
     <Card title="Actividad reciente">
       {limitedActivities.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-navy-500">No hay actividad reciente</p>
+          <p className="text-navy-500 text-sm">No hay actividad reciente</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {limitedActivities.map((activity) => (
-            <div key={activity.id} className="flex items-start space-x-3">
-              <div className="p-2 bg-navy-100 rounded-lg">
-                <activity.icon size={16} className="text-navy-600" />
+        <div className="space-y-3">
+          {limitedActivities.map((activity) => {
+            const Icon = activity.icon
+            return (
+              <div key={activity.id} className="flex items-start space-x-3">
+                <div className="p-2 bg-navy-100 rounded-lg">
+                  <Icon size={16} className="text-navy-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-navy-900 truncate">
+                    <span className="font-medium">{activity.user}</span> {activity.action}{' '}
+                    <span className="font-medium">{activity.target}</span>
+                  </p>
+                  <p className="text-xs text-navy-500">{activity.time}</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm text-navy-900">
-                  <span className="font-medium">{activity.user}</span> {activity.action}{' '}
-                  <span className="font-medium">{activity.target}</span>
-                </p>
-                <p className="text-xs text-navy-500">{activity.time}</p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </Card>

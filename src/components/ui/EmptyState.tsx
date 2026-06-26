@@ -1,25 +1,22 @@
-import { type HTMLAttributes, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { cn } from '../../utils/cn'
 
-interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
-  icon?: ReactNode
+interface EmptyStateProps {
+  icon: ReactNode
   title: string
-  description?: string
+  description: string
   action?: ReactNode
+  className?: string
 }
 
-export const EmptyState = ({ className, icon, title, description, action }: EmptyStateProps) => {
+export const EmptyState = ({ icon, title, description, action, className }: EmptyStateProps) => {
   return (
-    <div
-      className={cn('flex flex-col items-center justify-center text-center py-12', className)}
-    >
-      {icon && (
-        <div className="mb-4 text-navy-400">
-          {icon}
-        </div>
-      )}
+    <div className={cn('flex flex-col items-center justify-center py-12 px-4 text-center', className)}>
+      <div className="w-16 h-16 bg-navy-50 rounded-full flex items-center justify-center mb-4">
+        {icon}
+      </div>
       <h3 className="text-lg font-semibold text-navy-900 mb-2">{title}</h3>
-      {description && <p className="text-navy-600 mb-6 max-w-sm">{description}</p>}
+      <p className="text-navy-600 max-w-sm mb-6">{description}</p>
       {action}
     </div>
   )

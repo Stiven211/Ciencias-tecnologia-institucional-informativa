@@ -13,22 +13,21 @@ export const ProjectsCatalogPage = () => {
   return (
     <PublicLayout>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-navy-900">
-              Proyectos Académicos
-            </h2>
-            <p className="text-navy-600 max-w-2xl mx-auto">
-              Explora nuestro catálogo de proyectos científicos y tecnológicos
-              desarrollados por nuestra comunidad académica.
-            </p>
-          </div>
-          
-          <div className="grid gap-8 lg:grid-cols-3 lg:grid-rows-2">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-navy-900">
+            Repositorio de Proyectos
+          </h1>
+          <p className="text-navy-600 mt-2">
+            Proyectos académicos del Área de Ciencias Naturales y Tecnología
+          </p>
+        </div>
+        
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-1">
             <ProjectsFilters onFiltersChange={setFilters} />
-            <div className="lg:col-span-2">
-              <PublicProjectsGrid filters={filters} />
-            </div>
+          </div>
+          <div className="lg:col-span-2">
+            <PublicProjectsGrid filters={filters} />
           </div>
         </div>
       </main>

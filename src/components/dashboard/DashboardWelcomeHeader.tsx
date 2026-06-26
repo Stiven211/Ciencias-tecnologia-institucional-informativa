@@ -15,19 +15,19 @@ export const DashboardWelcomeHeader = ({ greeting, date }: DashboardWelcomeHeade
   const userName = user?.role === 'teacher' ? 'Profesor' : user?.fullName?.split(' ')[0]
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div>
-        <h1 className="text-3xl font-bold text-navy-900">
-          {greeting}, {userName}
+        <h1 className="text-2xl font-bold text-navy-900">
+          {greeting}, <span className="text-blue-500">{userName}</span>
         </h1>
-        <p className="text-navy-600 mt-1">{date}</p>
+        <p className="text-navy-500 text-sm mt-1">{date}</p>
       </div>
       <Button
         onClick={() => {
           console.log('[DashboardWelcomeHeader] Nuevo Proyecto clicked')
           navigate('/dashboard/projects/new')
         }}
-        iconLeft={<Plus size={20} />}
+        iconLeft={<Plus size={18} />}
       >
         Nuevo Proyecto
       </Button>

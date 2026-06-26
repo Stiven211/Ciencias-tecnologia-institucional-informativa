@@ -15,14 +15,18 @@
   --color-navy-900: #0f172a;
   --color-navy-950: #020617;
   
-  --color-green-500: #22c55e;
+  --color-blue-500: #2563eb;
+  --color-blue-600: #1d4ed8;
+  --color-blue-700: #1e40af;
+  
+  --color-green-500: #16a34a;
   --color-green-600: #16a34a;
   
-  --color-cyan-500: #06b6d4;
-  --color-cyan-600: #0891b2;
+  --color-orange-500: #ea580c;
+  --color-orange-600: #c2520c;
   
-  --color-orange-500: #f97316;
-  --color-orange-400: #fb923c;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
   
   --font-family-sans: Inter, system-ui, sans-serif;
 }

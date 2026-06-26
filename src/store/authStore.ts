@@ -52,7 +52,6 @@ export const useAuthStore = create<AuthState>()(
         try {
           await supabase.auth.signOut()
           set({ user: null, profile: null, loading: false, initialized: true })
-          console.log('[authStore] clearing auth state')
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Error al cerrar sesión', loading: false })
         }
@@ -76,22 +75,18 @@ export const useAuthStore = create<AuthState>()(
       initialize: async () => {
         const state = get()
         if (state.initialized) {
-          console.log('[authStore] already initialized, skipping')
           return
         }
         
-        console.log('[authStore] initialize called')
         set({ loading: true })
         try {
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           if (sessionError) {
-            console.error('[authStore] getSession error:', sessionError)
             set({ loading: false, initialized: true })
             return
           }
 
           if (session?.user) {
-            console.log('[authStore] Session found for user:', session.user.id)
             let profileData: Profile | null = null
             try {
               const { data, error } = await supabase
@@ -101,13 +96,10 @@ export const useAuthStore = create<AuthState>()(
                 .single()
               
               if (error) {
-                console.warn('[authStore] Could not fetch profile:', error)
               } else if (data) {
                 profileData = data
-                console.log('[authStore] Profile fetched:', profileData)
               }
             } catch (profileError) {
-              console.warn('Could not fetch profile:', profileError)
             }
             
             const currentUser: User = profileData ? {
@@ -125,47 +117,38 @@ export const useAuthStore = create<AuthState>()(
               permissions: PERMISSIONS['visitor'] || []
             }
             
-            console.log('[authStore] setting user')
             set({ user: currentUser, profile: profileData, loading: false, initialized: true })
           } else {
-            console.log('[authStore] No session found')
             set({ user: null, profile: null, loading: false, initialized: true })
           }
         } catch (error) {
-          console.error('[authStore] initialize error:', error)
           set({ user: null, profile: null, loading: false, initialized: true })
         }
       },
       login: async (email: string, password: string) => {
-        console.log('[authStore] login called for:', email)
         set({ loading: true, error: null })
         try {
           const user = await authService.signIn(email, password)
-          console.log('[authStore] login result:', user ? 'success' : 'null')
           if (user) {
             set({ user, loading: false, error: null })
           }
           return user
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error al iniciar sesión'
-          console.error('[authStore] login error:', message)
           set({ error: message, loading: false })
           throw error
         }
       },
       register: async (email: string, password: string, fullName: string) => {
-        console.log('[authStore] register called for:', email)
         set({ loading: true, error: null })
         try {
           const user = await authService.signUp(email, password, fullName)
-          console.log('[authStore] register result:', user ? 'success' : 'null')
           if (user) {
             set({ user, loading: false, error: null })
           }
           return user
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error al registrarse'
-          console.error('[authStore] register error:', message)
           set({ error: message, loading: false })
           throw error
         }
@@ -177,44 +160,39 @@ export const useAuthStore = create<AuthState>()(
   )
 )
 
-if (!authListener) {
-  const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log('[authStore] onAuthStateChange:', event, session?.user?.id)
-    
-    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-      if (session?.user) {
-        console.log('[authStore] setting user')
-        try {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          
-          const currentUser: User = data ? {
-            id: session.user.id,
-            email: session.user.email ?? '',
-            fullName: data.full_name,
-            role: data.role as UserRole,
-            avatarUrl: data.avatar_url,
-            permissions: PERMISSIONS[data.role as UserRole] || []
-          } : {
-            id: session.user.id,
-            email: session.user.email ?? '',
-            fullName: session.user.email?.split('@')[0] || 'User',
-            role: 'visitor',
-            permissions: PERMISSIONS['visitor'] || []
+  if (!authListener) {
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+        if (session?.user) {
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
+            
+            const currentUser: User = data ? {
+              id: session.user.id,
+              email: session.user.email ?? '',
+              fullName: data.full_name,
+              role: data.role as UserRole,
+              avatarUrl: data.avatar_url,
+              permissions: PERMISSIONS[data.role as UserRole] || []
+            } : {
+              id: session.user.id,
+              email: session.user.email ?? '',
+              fullName: session.user.email?.split('@')[0] || 'User',
+              role: 'visitor',
+              permissions: PERMISSIONS['visitor'] || []
+            }
+            useAuthStore.setState({ user: currentUser, profile: data, loading: false, initialized: true })
+          } catch (err: unknown) {
+            useAuthStore.setState({ loading: false, initialized: true })
           }
-          useAuthStore.setState({ user: currentUser, profile: data, loading: false, initialized: true })
-        } catch (err: unknown) {
-          console.warn('Could not fetch profile:', err)
-          useAuthStore.setState({ loading: false, initialized: true })
         }
+      } else if (event === 'SIGNED_OUT') {
+        useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
       }
-    } else if (event === 'SIGNED_OUT') {
-      console.log('[authStore] clearing auth state')
-      useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
-    }
-  })
-  authListener = data.subscription.unsubscribe
-}
+    })
+    authListener = data.subscription.unsubscribe
+  }

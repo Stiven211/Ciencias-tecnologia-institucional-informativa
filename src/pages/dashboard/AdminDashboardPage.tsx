@@ -127,7 +127,9 @@ const updateProfessorRole = async (id: string, role: UserRole) => {
                     </select>
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <button className="text-red-600 hover:text-red-800">Eliminar</button>
+                    <button disabled className="text-red-600 hover:text-red-800 opacity-50 cursor-not-allowed">
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -164,7 +166,9 @@ const updateProfessorRole = async (id: string, role: UserRole) => {
                     </select>
                   </td>
                   <td className="px-6 py-4 text-sm space-x-2">
-                    <button className="text-red-600 hover:text-red-800">Eliminar</button>
+                    <button disabled className="text-red-600 hover:text-red-800 opacity-50 cursor-not-allowed">
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               ))}

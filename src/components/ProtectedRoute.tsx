@@ -21,8 +21,6 @@ export const ProtectedRoute = ({
   const { user, loading, initialized } = useAuthStore()
   const location = useLocation()
 
-  console.log('[ProtectedRoute]', { loading, initialized, user: user?.id, userRole: user?.role, requiredPermissions })
-
   if (loading || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-50">
@@ -35,21 +33,17 @@ export const ProtectedRoute = ({
   }
 
   if (requireAuth && !user) {
-    console.log('[ProtectedRoute] No user, redirecting to:', redirectTo)
     return <Navigate to={redirectTo} state={{ from: location }} replace />
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    console.log('[ProtectedRoute] Role not allowed:', user.role, 'expected:', allowedRoles)
     return <Navigate to="/dashboard" replace />
   }
 
   if (requiredPermissions && user) {
     const { hasPermission } = useAuthStore.getState()
     const allHavePermission = requiredPermissions.every(hasPermission)
-    console.log('[ProtectedRoute] permission check:', { requiredPermissions, allHavePermission })
     if (!allHavePermission) {
-      console.log('[ProtectedRoute] Missing permissions:', requiredPermissions)
       return <div className="p-6"><p className="text-red-600">No tienes permisos para crear proyectos. Rol actual: {user.role}. Contacta al administrador.</p></div>
     }
   }
@@ -69,8 +63,6 @@ export const PublicOnlyRoute = ({
   const { user, loading, initialized } = useAuthStore()
   const { canRegister } = useInstitutionalUsers()
   const location = useLocation()
-
-  console.log('[PublicOnlyRoute]', { loading, initialized, user: user?.id })
 
   if (loading || !initialized) {
     return (

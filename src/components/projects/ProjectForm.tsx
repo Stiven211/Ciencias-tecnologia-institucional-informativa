@@ -75,7 +75,7 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
     console.log('[ProjectForm] handleSubmit triggered')
     console.log('[ProjectForm] formData:', data)
     console.log('[ProjectForm] user:', user)
-    
+
     if (!user?.id) {
       const errorMsg = 'Usuario no autenticado. Por favor, inicia sesión.'
       console.error('[ProjectForm] Auth error:', errorMsg)
@@ -83,7 +83,7 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
       showError('Error de autenticación', errorMsg)
       return
     }
-    
+
     try {
       setIsSubmitting(true)
       setError(null)
@@ -167,7 +167,7 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
           </label>
           <select
             {...register('status')}
-            className="w-full px-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             <option value="draft">Borrador</option>
             <option value="published">Publicado</option>
@@ -192,9 +192,9 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
 
         <div>
           <Input
-            label="Tecnologías (separadas por coma)"
+            label="Palabras clave del proyecto"
             {...register('technologies')}
-            placeholder="React, Node.js, Python"
+            placeholder="Biología, Física, Química, etc."
           />
         </div>
 
@@ -205,35 +205,35 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
           <textarea
             {...register('description')}
             rows={3}
-            className="w-full px-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full px-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             placeholder="Breve descripción del proyecto..."
           />
         </div>
 
-<div className="md:col-span-2">
-           <CategoriesSelect selected={categories} onChange={setCategories} />
-         </div>
+        <div className="md:col-span-2">
+          <CategoriesSelect selected={categories} onChange={setCategories} />
+        </div>
 
-         <div className="md:col-span-2">
-           <GalleryUpload 
-             images={galleryImages} 
-             projectId={project?.id || 'new'}
-             onChange={setGalleryImages} 
-           />
-         </div>
+        <div className="md:col-span-2">
+          <GalleryUpload
+            images={galleryImages}
+            projectId={project?.id || 'new'}
+            onChange={setGalleryImages}
+          />
+        </div>
 
-         <div className="md:col-span-2">
-           <label className="block text-sm font-medium text-navy-700 mb-1">
-             Contenido
-           </label>
-           <textarea
-             {...register('content')}
-             rows={8}
-             className="w-full px-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-             placeholder="Contenido detallado del proyecto..."
-           />
-         </div>
-       </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-navy-700 mb-1">
+            Contenido
+          </label>
+          <textarea
+            {...register('content')}
+            rows={8}
+            className="w-full px-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            placeholder="Contenido detallado del proyecto..."
+          />
+        </div>
+      </div>
 
       <div className="flex justify-end">
         <Button type="submit" loading={isSubmitting}>

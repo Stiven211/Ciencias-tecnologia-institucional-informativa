@@ -3,13 +3,15 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 import { PublicLayout } from '../../components/layout/PublicLayout'
-import type { Profile, Project, Publication } from '../../types'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { Skeleton, SkeletonCard } from '../../components/ui/Skeleton'
+import { BookOpen } from 'lucide-react'
+import type { Profile, Project } from '../../types'
 
 export const ProfessorProfilePage = () => {
   const { id } = useParams<{ id: string }>()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
-  const [publications, setPublications] = useState<Publication[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,15 +20,13 @@ export const ProfessorProfilePage = () => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [{ data: profileData }, { data: projectsData }, { data: pubsData }] = await Promise.all([
+        const [{ data: profileData }, { data: projectsData }] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', id).single(),
           supabase.from('projects').select('*').eq('professor_id', id).eq('status', 'published'),
-          supabase.from('publications').select('*').eq('professor_id', id),
         ])
 
         setProfile(profileData)
         setProjects(projectsData || [])
-        setPublications(pubsData || [])
       } finally {
         setLoading(false)
       }
@@ -35,108 +35,145 @@ export const ProfessorProfilePage = () => {
     fetchData()
   }, [id])
 
-  return (
-    <PublicLayout>
-      {loading && (
-        <main className="min-h-[calc(100vh-200px)] flex items-center justify-center">
-          <div className="animate-pulse">
-            <div className="h-96 w-full bg-navy-50 rounded-lg"></div>
+  if (loading) {
+    return (
+      <PublicLayout>
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <Skeleton height="200px" className="mb-8" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         </main>
-      )}
-      {!profile && !loading && (
+      </PublicLayout>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <PublicLayout>
         <main className="min-h-[calc(100vh-200px)] flex items-center justify-center px-6">
-          <div className="text-center text-navy-500">Profesor no encontrado</div>
+          <EmptyState
+            icon={<BookOpen size={32} className="text-navy-400" />}
+            title="Profesor no encontrado"
+            description="El perfil solicitado no existe o no está disponible."
+          />
         </main>
-      )}
-      {profile && !loading && (
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-2xl shadow-sm p-8 mb-8">
-          <div className="flex items-start space-x-6">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.full_name}
-                className="w-32 h-32 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center text-white text-4xl font-bold">
-                {profile.full_name.charAt(0)}
-              </div>
-            )}
-            
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-navy-900">{profile.full_name}</h1>
-              <p className="text-navy-600 mt-1 capitalize">{profile.role}</p>
-              
-              {profile.specialization && (
-                <div className="mt-3">
-                  <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                    {profile.specialization}
-                  </span>
+      </PublicLayout>
+    )
+  }
+
+  const allAreas = projects.flatMap(p => p.technologies || [])
+  const areaCounts = allAreas.reduce((acc: Record<string, number>, area) => {
+    acc[area] = (acc[area] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  const topAreas = Object.entries(areaCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+
+  return (
+    <PublicLayout>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="bg-white rounded-xl border border-navy-200 p-5 sm:p-8 mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6">
+            <div className="flex-shrink-0 mb-4 sm:mb-0">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name}
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-navy-100"
+                />
+              ) : (
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-navy-100 flex items-center justify-center text-navy-600 text-2xl sm:text-3xl font-semibold">
+                  {profile.full_name.charAt(0)}
                 </div>
               )}
-              
-              <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-navy-200">
+            </div>
+
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-navy-900">{profile.full_name}</h1>
+              <p className="text-navy-600 mt-1 capitalize text-sm sm:text-base">{profile.role}</p>
+
+              {profile.specialization && (
+                <span className="inline-block mt-3 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs sm:text-sm font-medium">
+                  {profile.specialization}
+                </span>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-navy-200">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-navy-900">{projects.length}</div>
-                  <div className="text-sm text-navy-600">Proyectos</div>
+                  <div className="text-lg sm:text-xl font-bold text-navy-900">{projects.length}</div>
+                  <div className="text-xs text-navy-600">Proyectos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-navy-900">{publications.length}</div>
-                  <div className="text-sm text-navy-600">Publicaciones</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-navy-900">{projects.reduce((sum, p) => sum + (p.technologies?.length || 0), 0)}</div>
-                  <div className="text-sm text-navy-600">Tecnologías</div>
+                  <div className="text-lg sm:text-xl font-bold text-navy-900">{topAreas.length}</div>
+                  <div className="text-xs text-navy-600">Áreas</div>
                 </div>
               </div>
             </div>
           </div>
 
           {profile.bio && (
-            <div className="mt-6 pt-6 border-t border-navy-200">
-              <h2 className="text-lg font-semibold text-navy-900 mb-2">Biografía</h2>
-              <p className="text-navy-700">{profile.bio}</p>
+            <div className="mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-navy-200">
+              <p className="text-navy-700 leading-relaxed text-sm sm:text-base">{profile.bio}</p>
             </div>
           )}
         </div>
 
-        {projects.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-navy-900 mb-4">Proyectos Publicados</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {projects.map(project => (
-                <div key={project.id} className="bg-white rounded-lg overflow-hidden shadow-sm border border-navy-200 hover:shadow-md transition-shadow">
-                  {project.cover_image && (
-                    <img src={project.cover_image} alt={project.title} className="w-full h-40 object-cover" />
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-navy-900 mb-2">{project.title}</h3>
-                    {project.categories && project.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {project.categories.slice(0, 2).map((cat, i) => (
-                          <span key={i} className="text-xs bg-navy-100 text-navy-700 px-2 py-0.5 rounded">{cat}</span>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-sm text-navy-600 mt-1 line-clamp-2">
-                      {project.description || 'Sin descripción'}
-                    </p>
-                    <Link
-                      to={`/projects/${project.slug}`}
-                      className="inline-block mt-3 text-sm text-green-600 font-medium hover:text-green-700"
-                    >
-                      Ver proyecto →
-                    </Link>
-                  </div>
-                </div>
+        {topAreas.length > 0 && (
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-base sm:text-lg font-semibold text-navy-900 mb-3 sm:mb-4">Áreas de especialización</h2>
+            <div className="flex flex-wrap gap-2">
+              {topAreas.map(([area, count]) => (
+                <span key={area} className="px-3 py-1.5 bg-navy-100 text-navy-700 text-xs sm:text-sm rounded-full">
+                  {area} <span className="text-navy-500">({count})</span>
+                </span>
               ))}
             </div>
           </div>
-          )}
-        </main>
-      )}
+        )}
+
+        <h2 className="text-lg sm:text-xl font-bold text-navy-900 mb-4 sm:mb-6">Proyectos publicados</h2>
+
+        {projects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {projects.map(project => (
+              <article key={project.id} className="bg-white rounded-xl border border-navy-200 overflow-hidden hover:shadow-md transition-all duration-200">
+                {project.cover_image && (
+                  <img src={project.cover_image} alt={project.title} className="w-full h-40 sm:h-44 object-cover" />
+                )}
+                <div className="p-4 sm:p-5">
+                  <h3 className="font-semibold text-navy-900 mb-2 text-sm sm:text-base">{project.title}</h3>
+                  {project.categories && project.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {project.categories.slice(0, 2).map((cat, i) => (
+                        <span key={i} className="text-xs bg-navy-100 text-navy-700 px-2 py-0.5 rounded">{cat}</span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-sm text-navy-600 line-clamp-2 mb-3">
+                    {project.description || 'Sin descripción'}
+                  </p>
+                  <Link
+                    to={`/projects/${project.slug}`}
+                    className="text-sm text-green-600 font-medium hover:text-green-700"
+                  >
+                    Ver proyecto →
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<BookOpen size={32} className="text-navy-400" />}
+            title="Sin proyectos publicados"
+            description="Este profesor aún no ha publicado proyectos en el repositorio."
+          />
+        )}
+      </main>
     </PublicLayout>
   )
 }

@@ -41,23 +41,30 @@ export const ProjectsFilters = ({ onFiltersChange }: ProjectsFiltersProps) => {
   }
 
   const commonTechnologies = [
-    'React', 'Node.js', 'Python', 'JavaScript', 'TypeScript', 
-    'Java', 'C++', 'MATLAB', 'LabVIEW', 'SolidWorks',
-    'Arduino', 'Raspberry Pi', 'TensorFlow', 'PyTorch', 'AWS'
+    'Biología',
+    'Química',
+    'Física',
+    'Matemáticas',
+    'Informática',
+    'Tecnología',
+    'Robótica',
+    'Programación',
+    'Electrónica',
+    'IA',
   ]
 
   return (
     <div className="space-y-6">
-      <Input
-        label="Buscar proyectos"
-        placeholder="Título, tecnologías, profesor..."
-        value={search}
-        onChange={handleSearchChange}
-      />
+        <Input
+          label="Buscar proyectos"
+          placeholder="Título, área, profesor..."
+          value={search}
+          onChange={handleSearchChange}
+        />
       
       <div>
         <label className="block text-sm font-medium text-navy-700 mb-2">
-          Categorías STEM
+          Categorías 
         </label>
         <div className="flex flex-wrap gap-2">
           {STEM_CATEGORIES.map(category => (
@@ -79,13 +86,13 @@ export const ProjectsFilters = ({ onFiltersChange }: ProjectsFiltersProps) => {
       
       <div>
         <label className="block text-sm font-medium text-navy-700 mb-2">
-          Filtrar por tecnologías
+          Filtrar por áreas temáticas
         </label>
         <select
           onChange={handleTechChange}
           className="w-full px-3 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Seleccionar tecnología...</option>
+          <option value="">Seleccionar área...</option>
           {commonTechnologies.map((tech) => (
             <option key={tech} value={tech}>
               {tech}
