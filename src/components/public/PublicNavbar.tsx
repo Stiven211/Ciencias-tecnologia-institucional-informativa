@@ -19,7 +19,7 @@ export const PublicNavbar = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center space-x-3" onClick={closeMenu}>
-                <img src="src\assets\logo.png" alt="Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
+                <img src="public\logo.png" alt="Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
                 <span className="text-xl font-bold text-navy-900">
                   Área de Ciencias
                 </span>
