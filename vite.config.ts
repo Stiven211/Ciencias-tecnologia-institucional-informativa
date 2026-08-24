@@ -7,5 +7,6 @@ export default defineConfig({
   // modificacion de puerto a 9988
   server: {
     port: 9988,
+    allowedHosts: true,
   }
 })
