@@ -61,10 +61,10 @@ export const PublicOnlyRoute = ({
   redirectTo = '/dashboard' 
 }: PublicOnlyRouteProps) => {
   const { user, loading, initialized } = useAuthStore()
-  const { canRegister } = useInstitutionalUsers()
+  const { canRegister, loading: checkingLimit } = useInstitutionalUsers()
   const location = useLocation()
 
-  if (loading || !initialized) {
+  if (loading || !initialized || checkingLimit) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-50">
         <div className="text-center">
@@ -79,7 +79,7 @@ export const PublicOnlyRoute = ({
     return <Navigate to={redirectTo} replace />
   }
 
-  if (!canRegister && location.pathname === '/register') {
+  if (canRegister === false && location.pathname === '/register') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
         <div className="w-full max-w-md space-y-8">

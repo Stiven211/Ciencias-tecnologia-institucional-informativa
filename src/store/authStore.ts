@@ -24,10 +24,6 @@ interface AuthState {
   register: (email: string, password: string, fullName: string) => Promise<User | null>
 }
 
-type Unsubscribe = () => void
-
-let authListener: Unsubscribe | null = null
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -95,33 +91,27 @@ export const useAuthStore = create<AuthState>()(
                 .eq('id', session.user.id)
                 .single()
               
-              if (error) {
-              } else if (data) {
+              if (!error && data) {
                 profileData = data
               }
-            } catch (profileError) {
+            } catch {
+              profileData = null
             }
-            
-            const currentUser: User = profileData ? {
+
+            const currentUser: User | null = profileData ? {
               id: session.user.id,
               email: session.user.email ?? '',
               fullName: profileData.full_name,
               role: profileData.role as UserRole,
               avatarUrl: profileData.avatar_url,
               permissions: PERMISSIONS[profileData.role as UserRole] || []
-            } : {
-              id: session.user.id,
-              email: session.user.email ?? '',
-              fullName: session.user.email?.split('@')[0] || 'User',
-              role: 'visitor',
-              permissions: PERMISSIONS['visitor'] || []
-            }
-            
+            } : null
+
             set({ user: currentUser, profile: profileData, loading: false, initialized: true })
           } else {
             set({ user: null, profile: null, loading: false, initialized: true })
           }
-        } catch (error) {
+        } catch {
           set({ user: null, profile: null, loading: false, initialized: true })
         }
       },
@@ -160,8 +150,7 @@ export const useAuthStore = create<AuthState>()(
   )
 )
 
-  if (!authListener) {
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
         if (session?.user) {
           try {
@@ -171,28 +160,20 @@ export const useAuthStore = create<AuthState>()(
               .eq('id', session.user.id)
               .single()
             
-            const currentUser: User = data ? {
+            const currentUser: User | null = data ? {
               id: session.user.id,
               email: session.user.email ?? '',
               fullName: data.full_name,
               role: data.role as UserRole,
               avatarUrl: data.avatar_url,
               permissions: PERMISSIONS[data.role as UserRole] || []
-            } : {
-              id: session.user.id,
-              email: session.user.email ?? '',
-              fullName: session.user.email?.split('@')[0] || 'User',
-              role: 'visitor',
-              permissions: PERMISSIONS['visitor'] || []
-            }
-            useAuthStore.setState({ user: currentUser, profile: data, loading: false, initialized: true })
-          } catch (err: unknown) {
-            useAuthStore.setState({ loading: false, initialized: true })
+            } : null
+            useAuthStore.setState({ user: currentUser, profile: data ?? null, loading: false, initialized: true })
+          } catch {
+            useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
           }
         }
       } else if (event === 'SIGNED_OUT') {
         useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
       }
-    })
-    authListener = data.subscription.unsubscribe
-  }
+  })
