@@ -1,6 +1,24 @@
 import { supabase } from '../lib/supabaseClient'
 import type { Project, ProjectInsert } from '../types'
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+
+const createUploadPath = async (file: File, projectId: string, folder: string) => {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    throw new Error('Sólo se permiten imágenes JPG, PNG, WEBP o GIF.')
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error('La imagen no puede superar los 10 MB.')
+  }
+
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) throw new Error('Debes iniciar sesión para subir imágenes.')
+
+  const extension = file.type.split('/')[1].replace('jpeg', 'jpg')
+  return `${user.id}/${projectId}/${folder}/${crypto.randomUUID()}.${extension}`
+}
+
 export const projectsService = {
   async getProjects(options?: { 
     limit?: number; 
@@ -131,9 +149,7 @@ export const projectsService = {
   },
 
   async uploadCoverImage(file: File, projectId: string) {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${projectId}-${Date.now()}.${fileExt}`
-    const filePath = `covers/${fileName}`
+    const filePath = await createUploadPath(file, projectId, 'covers')
 
     console.log('[projectsService] Uploading cover image to bucket "covers":', filePath)
     const { error } = await supabase.storage
@@ -154,13 +170,11 @@ export const projectsService = {
   },
 
   async uploadGalleryImage(file: File, projectId: string) {
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${projectId}-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`
-    const filePath = `gallery/${fileName}`
+    const filePath = await createUploadPath(file, projectId, 'gallery')
 
     console.log('[projectsService] Uploading gallery image to bucket "covers":', filePath)
     const { error } = await supabase.storage
-      .from('covers')
+      .from('gallery')
       .upload(filePath, file)
 
     if (error) {
@@ -169,7 +183,7 @@ export const projectsService = {
     }
 
     const { data: publicUrl } = supabase.storage
-      .from('covers')
+      .from('gallery')
       .getPublicUrl(filePath)
 
     console.log('[projectsService] Gallery image public URL:', publicUrl.publicUrl)

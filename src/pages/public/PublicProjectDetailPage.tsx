@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import DOMPurify from 'dompurify'
 import { Link } from 'react-router-dom'
 import { publicService } from '../../services/public.service'
 import { RelatedProjects } from '../../components/public/RelatedProjects'
@@ -120,7 +121,7 @@ export const PublicProjectDetailPage = () => {
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-navy-900 mb-3">Contenido detallado</h2>
                 <div
-                  dangerouslySetInnerHTML={{ __html: project.content }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(project.content) }}
                   className="prose prose-navy max-w-none"
                 />
               </div>

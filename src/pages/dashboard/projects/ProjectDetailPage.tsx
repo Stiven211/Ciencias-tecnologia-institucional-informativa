@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import DOMPurify from 'dompurify'
 import { ProjectHeader } from '../../../components/projects/ProjectHeader'
 import { LoadingSpinnerCentered } from '../../../components/ui/LoadingSpinner'
 import { projectsService } from '../../../services/projects.service'
@@ -35,7 +36,7 @@ export const ProjectDetailPage = () => {
 
       <div className="prose prose-navy max-w-none">
         {project.content ? (
-          <div dangerouslySetInnerHTML={{ __html: project.content }} />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(project.content) }} />
         ) : (
           <p className="text-navy-600">{project.description || 'Sin contenido'}</p>
         )}
