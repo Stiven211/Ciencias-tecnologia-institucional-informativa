@@ -27,3 +27,7 @@ dist-ssr
 .env.local
 .vscode
 .kilo
+
+# Reportes locales (no se versionan)
+REPORTE_*.md
+AUDITORIA_*.md
