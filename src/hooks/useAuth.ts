@@ -23,7 +23,7 @@ export const useAuth = () => {
     setLoading(true)
     setError(null)
     try {
-      await register(email, password, fullName)
+      return await register(email, password, fullName)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrarse')
       throw err

@@ -12,7 +12,8 @@ export function useInstitutionalUsers() {
       try {
         const { count, error } = await supabase
           .from('profiles')
-          .select('id', { count: 'exact' })
+          .select('id', { count: 'exact', head: true })
+          .eq('role', 'teacher')
 
         if (error) throw error
 

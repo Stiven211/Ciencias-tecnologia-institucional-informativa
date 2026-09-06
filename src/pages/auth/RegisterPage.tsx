@@ -63,9 +63,14 @@ export const RegisterPage = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await registerUser(data.email, data.password, data.fullName)
-      success('¡Cuenta creada!', 'Te has registrado correctamente. Bienvenido.')
-      navigate('/dashboard')
+      const registeredUser = await registerUser(data.email, data.password, data.fullName)
+      if (registeredUser) {
+        success('¡Cuenta creada!', 'Te has registrado correctamente. Bienvenido.')
+        navigate('/dashboard')
+      } else {
+        success('Revisa tu correo', 'Confirma tu cuenta antes de iniciar sesión.')
+        navigate('/login')
+      }
     } catch (err) {
       showError(
         'Error al registrarse',
