@@ -28,6 +28,59 @@ type Unsubscribe = () => void
 
 let authListener: Unsubscribe | null = null
 
+const fetchProfileAndBuildUser = async (userId: string, email: string | null | undefined): Promise<{ user: User; profile: Profile | null }> => {
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (data) {
+    const profile = data as Profile
+    return {
+      profile,
+      user: {
+        id: userId,
+        email: profile.email,
+        fullName: profile.full_name,
+        role: profile.role,
+        avatarUrl: profile.avatar_url,
+        permissions: PERMISSIONS[profile.role] ?? [],
+      },
+    }
+  }
+
+  return {
+    profile: null,
+    user: {
+      id: userId,
+      email: email ?? '',
+      fullName: email?.split('@')[0] ?? 'User',
+      role: 'visitor',
+      permissions: PERMISSIONS['visitor'] ?? [],
+    },
+  }
+}
+
+const initAuthListener = (): void => {
+  if (authListener) return
+  const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+      if (session?.user) {
+        const { user, profile } = await fetchProfileAndBuildUser(session.user.id, session.user.email)
+        useAuthStore.setState({ user, profile, loading: false, initialized: true })
+      } else {
+        useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
+      }
+    } else if (event === 'SIGNED_OUT') {
+      useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
+    }
+  })
+  authListener = data.subscription.unsubscribe
+}
+
+initAuthListener()
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -38,7 +91,7 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       setUser: (user) => {
         if (user) {
-          const permissions = PERMISSIONS[user.role as UserRole] || []
+          const permissions = PERMISSIONS[user.role] ?? []
           set({ user: { ...user, permissions } })
         } else {
           set({ user: null })
@@ -74,64 +127,27 @@ export const useAuthStore = create<AuthState>()(
       },
       initialize: async () => {
         const state = get()
-        if (state.initialized) {
-          return
-        }
-        
+        if (state.initialized) return
+
         set({ loading: true })
         try {
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-          if (sessionError) {
-            set({ loading: false, initialized: true })
-            return
-          }
+          const { data: { session } } = await supabase.auth.getSession()
 
           if (session?.user) {
-            let profileData: Profile | null = null
-            try {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single()
-              
-              if (error) {
-              } else if (data) {
-                profileData = data
-              }
-            } catch (profileError) {
-            }
-            
-            const currentUser: User = profileData ? {
-              id: session.user.id,
-              email: session.user.email ?? '',
-              fullName: profileData.full_name,
-              role: profileData.role as UserRole,
-              avatarUrl: profileData.avatar_url,
-              permissions: PERMISSIONS[profileData.role as UserRole] || []
-            } : {
-              id: session.user.id,
-              email: session.user.email ?? '',
-              fullName: session.user.email?.split('@')[0] || 'User',
-              role: 'visitor',
-              permissions: PERMISSIONS['visitor'] || []
-            }
-            
-            set({ user: currentUser, profile: profileData, loading: false, initialized: true })
+            const { user, profile } = await fetchProfileAndBuildUser(session.user.id, session.user.email)
+            set({ user, profile, loading: false, initialized: true })
           } else {
             set({ user: null, profile: null, loading: false, initialized: true })
           }
-        } catch (error) {
+        } catch {
           set({ user: null, profile: null, loading: false, initialized: true })
         }
       },
-      login: async (email: string, password: string) => {
+      login: async (email, password) => {
         set({ loading: true, error: null })
         try {
           const user = await authService.signIn(email, password)
-          if (user) {
-            set({ user, loading: false, error: null })
-          }
+          set({ user, loading: false, error: null })
           return user
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error al iniciar sesión'
@@ -139,13 +155,11 @@ export const useAuthStore = create<AuthState>()(
           throw error
         }
       },
-      register: async (email: string, password: string, fullName: string) => {
+      register: async (email, password, fullName) => {
         set({ loading: true, error: null })
         try {
           const user = await authService.signUp(email, password, fullName)
-          if (user) {
-            set({ user, loading: false, error: null })
-          }
+          set({ user, loading: false, error: null })
           return user
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error al registrarse'
@@ -156,43 +170,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({ user: state.user, profile: state.profile }),
     }
   )
 )
-
-  if (!authListener) {
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-        if (session?.user) {
-          try {
-            const { data } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single()
-            
-            const currentUser: User = data ? {
-              id: session.user.id,
-              email: session.user.email ?? '',
-              fullName: data.full_name,
-              role: data.role as UserRole,
-              avatarUrl: data.avatar_url,
-              permissions: PERMISSIONS[data.role as UserRole] || []
-            } : {
-              id: session.user.id,
-              email: session.user.email ?? '',
-              fullName: session.user.email?.split('@')[0] || 'User',
-              role: 'visitor',
-              permissions: PERMISSIONS['visitor'] || []
-            }
-            useAuthStore.setState({ user: currentUser, profile: data, loading: false, initialized: true })
-          } catch (err: unknown) {
-            useAuthStore.setState({ loading: false, initialized: true })
-          }
-        }
-      } else if (event === 'SIGNED_OUT') {
-        useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
-      }
-    })
-    authListener = data.subscription.unsubscribe
-  }

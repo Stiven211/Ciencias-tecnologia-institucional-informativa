@@ -4,6 +4,15 @@ export type Permission =
   | 'create_project'
   | 'edit_own_project'
   | 'delete_own_project'
+  | 'create_resource'
+  | 'edit_own_resource'
+  | 'delete_own_resource'
+  | 'create_publication'
+  | 'edit_own_publication'
+  | 'delete_own_publication'
+  | 'create_activity'
+  | 'edit_own_activity'
+  | 'delete_own_activity'
   | 'manage_all_projects'
   | 'manage_teachers'
   | 'view_public_content'
@@ -13,6 +22,15 @@ export const PERMISSIONS: Record<UserRole, Permission[]> = {
     'create_project',
     'edit_own_project',
     'delete_own_project',
+    'create_resource',
+    'edit_own_resource',
+    'delete_own_resource',
+    'create_publication',
+    'edit_own_publication',
+    'delete_own_publication',
+    'create_activity',
+    'edit_own_activity',
+    'delete_own_activity',
     'manage_all_projects',
     'manage_teachers',
     'view_public_content',
@@ -21,6 +39,15 @@ export const PERMISSIONS: Record<UserRole, Permission[]> = {
     'create_project',
     'edit_own_project',
     'delete_own_project',
+    'create_resource',
+    'edit_own_resource',
+    'delete_own_resource',
+    'create_publication',
+    'edit_own_publication',
+    'delete_own_publication',
+    'create_activity',
+    'edit_own_activity',
+    'delete_own_activity',
     'view_public_content',
   ],
   visitor: ['view_public_content'],

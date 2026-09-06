@@ -6,7 +6,6 @@ interface DashboardStatsGridProps {
     projects: number
     resources: number
     collaborators: number
-    views: number | string
   }
   loading?: boolean
 }
@@ -33,20 +32,13 @@ const fallbackStats = [
     trend: { value: 1, positive: true },
     description: 'con otros profesores',
   },
-  {
-    title: 'Visualizaciones',
-    value: '0k',
-    icon: Users,
-    trend: { value: 15, positive: true },
-    description: 'este mes',
-  },
 ]
 
 export const DashboardStatsGrid = ({ stats, loading }: DashboardStatsGridProps) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((_, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((_, index) => (
           <StatsCard
             key={index}
             title="Cargando..."
@@ -82,18 +74,11 @@ export const DashboardStatsGrid = ({ stats, loading }: DashboardStatsGridProps) 
           trend: { value: 1, positive: true },
           description: 'con otros profesores',
         },
-        {
-          title: 'Visualizaciones',
-          value: stats.views,
-          icon: Users,
-          trend: { value: 15, positive: true },
-          description: 'este mes',
-        },
       ]
     : fallbackStats
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {statsToRender.map((stat) => (
         <StatsCard key={stat.title} {...stat} />
       ))}

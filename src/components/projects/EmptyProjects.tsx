@@ -14,10 +14,7 @@ export const EmptyProjects = () => {
         Aún no has creado ningún proyecto. Comienza creando tu primer proyecto académico.
       </p>
       <button
-        onClick={() => {
-          console.log('[EmptyProjects] navigate create project')
-          navigate('/dashboard/projects/new')
-        }}
+        onClick={() => navigate('/dashboard/projects/new')}
         className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
       >
         Crear primer proyecto

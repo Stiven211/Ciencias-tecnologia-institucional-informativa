@@ -13,7 +13,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (initializedRef.current) return
     initializedRef.current = true
 
-    console.log('[AuthProvider] initializing auth')
     initialize()
   }, [initialize])
 

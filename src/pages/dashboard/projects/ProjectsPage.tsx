@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useProjects } from '../../../hooks/useProjects'
 import { ProjectCard } from '../../../components/projects/ProjectCard'
 import { EmptyProjects } from '../../../components/projects/EmptyProjects'
@@ -10,11 +10,15 @@ import { Pagination } from '../../../components/ui/Pagination'
 import { Button } from '../../../components/ui/Button'
 import { Input } from '../../../components/ui/Input'
 import { projectsService } from '../../../services/projects.service'
+import { useAuthStore } from '../../../store/authStore'
 import type { Project } from '../../../types'
 
 export const ProjectsPage = () => {
   const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialQuery = searchParams.get('q') ?? ''
+  const { user } = useAuthStore()
+  const [searchTerm, setSearchTerm] = useState(initialQuery)
   const [filterStatus, setFilterStatus] = useState('all')
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; project?: Project }>({ open: false })
   const [isDeleting, setIsDeleting] = useState(false)
@@ -35,8 +39,13 @@ export const ProjectsPage = () => {
   })
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
+    const value = e.target.value
+    setSearchTerm(value)
     setCurrentPage(1)
+    const next = new URLSearchParams(searchParams)
+    if (value) next.set('q', value)
+    else next.delete('q')
+    setSearchParams(next, { replace: true })
   }
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -49,11 +58,14 @@ export const ProjectsPage = () => {
   }
 
   const handleDelete = async () => {
-    if (!deleteModal.project) return
+    if (!deleteModal.project || !user?.id) return
 
     try {
       setIsDeleting(true)
-      await projectsService.deleteProject(deleteModal.project.id)
+      await projectsService.deleteProject(deleteModal.project.id, {
+        userId: user.id,
+        isAdmin: user.role === 'admin',
+      })
       await refetch()
       setDeleteModal({ open: false })
     } catch (err) {

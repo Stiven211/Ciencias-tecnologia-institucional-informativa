@@ -1,11 +1,12 @@
 import { RecentActivity } from './RecentActivity'
 import { UpcomingTasks } from './UpcomingTasks'
 import { QuickActions } from './QuickActions'
+import type { Project, Resource, Publication } from '../../types'
 
 interface DashboardContentPanelProps {
-  recentProjects?: any[]
-  recentResources?: any[]
-  recentPublications?: any[]
+  recentProjects?: Project[]
+  recentResources?: Resource[]
+  recentPublications?: Publication[]
 }
 
 export const DashboardContentPanel = ({

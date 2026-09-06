@@ -23,10 +23,7 @@ export const DashboardWelcomeHeader = ({ greeting, date }: DashboardWelcomeHeade
         <p className="text-navy-500 text-sm mt-1">{date}</p>
       </div>
       <Button
-        onClick={() => {
-          console.log('[DashboardWelcomeHeader] Nuevo Proyecto clicked')
-          navigate('/dashboard/projects/new')
-        }}
+        onClick={() => navigate('/dashboard/projects/new')}
         iconLeft={<Plus size={18} />}
       >
         Nuevo Proyecto

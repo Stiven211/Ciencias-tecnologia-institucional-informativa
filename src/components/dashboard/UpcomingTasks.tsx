@@ -4,6 +4,7 @@ import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { useAuthStore } from '../../store/authStore'
 import { activitiesService } from '../../services/activities.service'
+import type { Activity } from '../../types'
 
 interface Task {
   id: string
@@ -35,22 +36,28 @@ export const UpcomingTasks = () => {
       try {
         setLoading(true)
         const activities = await activitiesService.getUpcomingTasks(5)
-        
-        // Convertir actividades a tareas para el dashboard
-        const taskList: Task[] = activities.map((activity: any) => ({
-          id: activity.id,
-          title: activity.title,
-          dueDate: new Date(activity.due_date).toLocaleDateString('es-ES', {
-            day: 'numeric',
-            month: 'short'
-          }),
-          priority: activity.priority as 'high' | 'medium' | 'low' || 'medium',
-          status: activity.status as 'pending' | 'completed' || 'pending'
-        }))
-        
+
+        const taskList: Task[] = activities.map((activity) => {
+          const raw = activity as Activity & {
+            priority?: 'high' | 'medium' | 'low' | null
+            status?: 'pending' | 'completed' | null
+          }
+          return {
+            id: activity.id,
+            title: activity.title,
+            dueDate: raw.due_date
+              ? new Date(raw.due_date).toLocaleDateString('es-ES', {
+                  day: 'numeric',
+                  month: 'short'
+                })
+              : 'Sin fecha',
+            priority: raw.priority ?? 'medium',
+            status: raw.status ?? 'pending'
+          }
+        })
+
         setTasks(taskList)
       } catch (err) {
-        console.error('Error fetching upcoming tasks:', err)
         setError(err instanceof Error ? err.message : 'Error al cargar tareas próximas')
       } finally {
         setLoading(false)

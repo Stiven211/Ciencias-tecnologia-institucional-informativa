@@ -6,7 +6,6 @@ interface DashboardStats {
   projects: number
   resources: number
   collaborators: number
-  views: string
 }
 
 export const useDashboardStats = () => {
@@ -16,7 +15,6 @@ export const useDashboardStats = () => {
     projects: 0,
     resources: 0,
     collaborators: 0,
-    views: '0'
   })
   
   const [loading, setLoading] = useState(true)
@@ -36,8 +34,7 @@ export const useDashboardStats = () => {
         const [
           projectsCount,
           resourcesCount,
-          profilesCount,
-          viewsCount
+          profilesCount
         ] = await Promise.all([
           // Proyectos del profesor actual
           supabase
@@ -56,26 +53,17 @@ export const useDashboardStats = () => {
             .from('profiles')
             .select('id', { count: 'exact' })
             .eq('role', 'teacher')
-            .neq('id', user.id),
-            
-          // Para las visualizaciones, vamos a usar un placeholder o podemos calcularlo de otra manera
-          // Por ahora, vamos a usar un valor estático o podemos agregar una tabla de analytics
-          supabase
-            .from('projects')
-            .select('id')
-            .eq('professor_id', user.id)
+            .neq('id', user.id)
         ])
         
         if (projectsCount.error) throw projectsCount.error
         if (resourcesCount.error) throw resourcesCount.error
         if (profilesCount.error) throw profilesCount.error
-        if (viewsCount.error) throw viewsCount.error
         
         setStats({
           projects: projectsCount.count ?? 0,
           resources: resourcesCount.count ?? 0,
           collaborators: profilesCount.count ?? 0,
-          views: `${Math.floor((projectsCount.count ?? 0) * 150)}k` // Estimación básica
         })
       } catch (err) {
         console.error('Error fetching dashboard stats:', err)

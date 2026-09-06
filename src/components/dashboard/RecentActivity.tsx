@@ -1,5 +1,6 @@
 import { BookOpen, FileText, Upload } from 'lucide-react'
 import { Card } from '../ui/Card'
+import type { Project, Resource, Publication } from '../../types'
 
 interface ActivityItem {
   id: string
@@ -12,21 +13,19 @@ interface ActivityItem {
 }
 
 interface RecentActivityProps {
-  recentProjects: any[]
-  recentResources: any[]
-  recentPublications: any[]
+  recentProjects: Project[]
+  recentResources: Resource[]
+  recentPublications: Publication[]
 }
 
-export const RecentActivity = ({ 
-  recentProjects = [], 
-  recentResources = [], 
-  recentPublications = [] 
+export const RecentActivity = ({
+  recentProjects = [],
+  recentResources = [],
+  recentPublications = []
 }: RecentActivityProps) => {
-  // Convertir los datos reales en actividades de formato uniforme
   const activities: ActivityItem[] = []
 
-  // Proyectos recientes
-  recentProjects.forEach((project: any) => {
+  recentProjects.forEach((project) => {
     activities.push({
       id: project.id,
       user: project.professor?.full_name || 'Profesor desconocido',
@@ -42,8 +41,7 @@ export const RecentActivity = ({
     })
   })
 
-  // Recursos recientes
-  recentResources.forEach((resource: any) => {
+  recentResources.forEach((resource) => {
     activities.push({
       id: resource.id,
       user: resource.professor?.full_name || 'Profesor desconocido',
@@ -59,8 +57,7 @@ export const RecentActivity = ({
     })
   })
 
-  // Publicaciones recientes
-  recentPublications.forEach((pub: any) => {
+  recentPublications.forEach((pub) => {
     activities.push({
       id: pub.id,
       user: pub.professor?.full_name || 'Profesor desconocido',

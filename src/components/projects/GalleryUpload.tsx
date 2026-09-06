@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { X, Plus } from 'lucide-react'
 import { projectsService } from '../../services/projects.service'
 import { useToast } from '../ui/ToastContext'
@@ -7,70 +7,43 @@ import { STEM_CATEGORIES } from '../../config/stemCategories'
 interface GalleryUploadProps {
   images: string[]
   projectId: string
-  onChange: (images: string[]) => void
+  userId: string
+  files: File[]
+  onFilesChange: (files: File[]) => void
+  onImagesChange: (images: string[]) => void
 }
 
-export const GalleryUpload = ({ images, projectId, onChange }: GalleryUploadProps) => {
-  const [newFiles, setNewFiles] = useState<File[]>([])
-  const [previews, setPreviews] = useState<string[]>([])
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export const GalleryUpload = ({ images, projectId, userId, files, onFilesChange, onImagesChange }: GalleryUploadProps) => {
   const { success, error: showError } = useToast()
 
+  const previews = files.map(file => URL.createObjectURL(file))
+
   useEffect(() => {
-    const urls = newFiles.map(file => URL.createObjectURL(file))
-    setPreviews(urls)
-    return () => urls.forEach(url => URL.revokeObjectURL(url))
-  }, [newFiles])
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [previews])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setNewFiles(prev => [...prev, ...files])
+    const selected = Array.from(e.target.files || [])
+    onFilesChange([...files, ...selected])
   }
 
   const removeNewImage = (index: number) => {
-    setNewFiles(prev => prev.filter((_, i) => i !== index))
+    onFilesChange(files.filter((_, i) => i !== index))
   }
 
   const removeExistingImage = (index: number) => {
-    onChange(images.filter((_, i) => i !== index))
+    onImagesChange(images.filter((_, i) => i !== index))
   }
 
-  const uploadAll = async () => {
-    if (newFiles.length === 0) return
-
-    setUploading(true)
-    setError(null)
-
-    try {
-      const uploadedUrls: string[] = []
-      for (const file of newFiles) {
-        const url = await projectsService.uploadGalleryImage(file, projectId)
-        uploadedUrls.push(url)
-      }
-      onChange([...images, ...uploadedUrls])
-      setNewFiles([])
-      success('Imágenes agregadas', `${uploadedUrls.length} imágenes subidas correctamente`)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al subir imágenes'
-      setError(message)
-      showError('Error', message)
-    } finally {
-      setUploading(false)
-    }
-  }
+  const isCreating = projectId === 'new'
 
   return (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-navy-700 mb-1">
         Galería de imágenes
       </label>
-      
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-          {error}
-        </div>
-      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {images.map((url, index) => (
@@ -86,7 +59,7 @@ export const GalleryUpload = ({ images, projectId, onChange }: GalleryUploadProp
             </button>
           </div>
         ))}
-        
+
         {previews.map((url, index) => (
           <div key={`preview-${index}`} className="relative">
             <img src={url} alt={`Preview ${index}`} className="w-full h-24 object-cover rounded-lg opacity-50" />
@@ -100,7 +73,7 @@ export const GalleryUpload = ({ images, projectId, onChange }: GalleryUploadProp
             </button>
           </div>
         ))}
-        
+
         <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-navy-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors">
           <Plus size={24} className="text-navy-400" />
           <span className="text-xs text-navy-500 mt-1">Agregar</span>
@@ -110,20 +83,14 @@ export const GalleryUpload = ({ images, projectId, onChange }: GalleryUploadProp
             multiple
             onChange={handleFileChange}
             className="hidden"
-            disabled={uploading}
           />
         </label>
       </div>
 
-      {newFiles.length > 0 && (
-        <button
-          type="button"
-          onClick={uploadAll}
-          disabled={uploading}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
-        >
-          {uploading ? 'Subiendo...' : `Subir ${newFiles.length} imágenes`}
-        </button>
+      {isCreating && files.length > 0 && (
+        <p className="text-sm text-navy-600">
+          Las imágenes se subirán al crear el proyecto.
+        </p>
       )}
     </div>
   )

@@ -32,14 +32,13 @@ export const useProjects = ({
   const userId = explicitProfessorId ?? user?.id
 
   const fetchProjects = useCallback(async () => {
-    console.log('[useProjects] fetchProjects called for userId:', userId)
     try {
       setLoading(true)
       setError(null)
 
-      const options: any = {
+      const options: Parameters<typeof projectsService.getProjects>[0] = {
         limit,
-        searchTerm: searchTerm.trim(),
+        search: searchTerm.trim(),
       }
 
       if (userId) {
@@ -50,13 +49,11 @@ export const useProjects = ({
         options.status = filterStatus
       }
 
-      console.log('[useProjects] Fetching with options:', options)
       const result = await projectsService.getProjects(options)
       setProjects(result.data)
-      setTotalCount(result.count ?? 0)
+      setTotalCount(result.count)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error fetching projects'
-      console.error('[useProjects] Error:', err)
+      const message = err instanceof Error ? err.message : 'Error al cargar proyectos'
       setError(message)
     } finally {
       setLoading(false)

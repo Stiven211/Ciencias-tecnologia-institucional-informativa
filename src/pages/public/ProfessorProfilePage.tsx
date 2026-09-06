@@ -1,7 +1,8 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../../lib/supabaseClient'
+import { profileService } from '../../services/profile.service'
+import { publicService } from '../../services/public.service'
 import { PublicLayout } from '../../components/layout/PublicLayout'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton, SkeletonCard } from '../../components/ui/Skeleton'
@@ -20,13 +21,13 @@ export const ProfessorProfilePage = () => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [{ data: profileData }, { data: projectsData }] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', id).single(),
-          supabase.from('projects').select('*').eq('professor_id', id).eq('status', 'published'),
+        const [profileData, projectsData] = await Promise.all([
+          profileService.getProfileById(id),
+          publicService.getPublishedProjectsByProfessor(id),
         ])
 
         setProfile(profileData)
-        setProjects(projectsData || [])
+        setProjects(projectsData)
       } finally {
         setLoading(false)
       }

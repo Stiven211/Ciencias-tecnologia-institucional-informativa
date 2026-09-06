@@ -2,10 +2,12 @@ import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Navbar } from './Navbar'
 import { useState } from 'react'
-import { Menu } from 'lucide-react'
 
 export const DashboardLayout = () => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+
+  const openSidebar = () => setMobileSidebarOpen(true)
+  const closeSidebar = () => setMobileSidebarOpen(false)
 
   return (
     <div className="flex h-screen bg-navy-50">
@@ -17,28 +19,18 @@ export const DashboardLayout = () => {
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div 
-            className="fixed inset-0 bg-black/50" 
-            onClick={() => setMobileSidebarOpen(false)}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={closeSidebar}
           />
           <div className="relative z-10">
-            <Sidebar />
+            <Sidebar onNavigate={closeSidebar} />
           </div>
         </div>
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="lg:hidden bg-white border-b border-navy-200 px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={() => setMobileSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-navy-100"
-          >
-            <Menu size={24} />
-          </button>
-          <h1 className="text-lg font-bold text-navy-900">Ciencias</h1>
-        </header>
-        
-        <Navbar />
+        <Navbar onOpenSidebar={openSidebar} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <Outlet />
         </main>

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient'
-import type { Project } from '../types'
+import type { Project, Publication } from '../types'
 
 interface PublicProjectsFilters {
   search?: string
@@ -102,36 +102,47 @@ export const publicService = {
     return data as Project[]
   },
 
-  async getPublicStats() {
-    const [projectsCount, professorsCount, resourcesCount, publicationsCount] = await Promise.all([
-      supabase
-        .from('projects')
-        .select('id', { count: 'exact' })
-        .eq('status', 'published'),
-      
-      supabase
-        .from('profiles')
-        .select('id', { count: 'exact' }),
-      
-      supabase
-        .from('resources')
-        .select('id', { count: 'exact' }),
-      
-      supabase
-        .from('publications')
-        .select('id', { count: 'exact' })
-    ])
+  async getPublishedProjectsByProfessor(professorId: string) {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        professor:profiles(id, full_name, avatar_url)
+      `)
+      .eq('professor_id', professorId)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
 
-    if (projectsCount.error) throw projectsCount.error
-    if (professorsCount.error) throw professorsCount.error
-    if (resourcesCount.error) throw resourcesCount.error
-    if (publicationsCount.error) throw publicationsCount.error
+    if (error) throw error
+    return (data ?? []) as Project[]
+  },
 
-    return {
-      projects: projectsCount.count,
-      professors: professorsCount.count,
-      resources: resourcesCount.count,
-      publications: publicationsCount.count
-    }
+  async getPublishedPublications() {
+    const { data, error } = await supabase
+      .from('publications')
+      .select(`
+        *,
+        professor:profiles(id, full_name, avatar_url)
+      `)
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return (data ?? []) as Publication[]
+  },
+
+  async getPublishedPublicationById(id: string) {
+    const { data, error } = await supabase
+      .from('publications')
+      .select(`
+        *,
+        professor:profiles(id, full_name, avatar_url)
+      `)
+      .eq('id', id)
+      .eq('published', true)
+      .single()
+
+    if (error) throw error
+    return data as Publication
   }
 }

@@ -44,7 +44,22 @@ export const ProtectedRoute = ({
     const { hasPermission } = useAuthStore.getState()
     const allHavePermission = requiredPermissions.every(hasPermission)
     if (!allHavePermission) {
-      return <div className="p-6"><p className="text-red-600">No tienes permisos para crear proyectos. Rol actual: {user.role}. Contacta al administrador.</p></div>
+      return (
+        <div className="min-h-[60vh] flex items-center justify-center px-6">
+          <div className="max-w-md text-center bg-white border border-red-200 rounded-2xl p-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-navy-900 mb-2">Acceso restringido</h2>
+            <p className="text-navy-600 mb-6">
+              No tienes permisos para acceder a esta sección. Si crees que es un error, contacta al administrador.
+            </p>
+            <Link
+              to="/dashboard"
+              className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+            >
+              Volver al inicio
+            </Link>
+          </div>
+        </div>
+      )
     }
   }
 

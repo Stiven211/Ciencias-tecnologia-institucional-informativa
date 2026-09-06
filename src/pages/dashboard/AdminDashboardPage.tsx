@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Shield, Users, FolderOpen, BookOpen, FileText, Search } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import { projectsService } from '../../services/projects.service'
+import { profileService } from '../../services/profile.service'
+import { useAuthStore } from '../../store/authStore'
 import { LoadingSpinnerCentered } from '../../components/ui/LoadingSpinner'
 import { Pagination } from '../../components/ui/Pagination'
 import { Input } from '../../components/ui/Input'
 import type { Profile, Project, UserRole } from '../../types'
 
-type AdminTab = 'professors' | 'projects' | 'publications' | 'resources'
+type AdminTab = 'professors' | 'projects'
 
 export const AdminDashboardPage = () => {
+  const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState<AdminTab>('professors')
   const [professors, setProfessors] = useState<Profile[]>([])
   const [projects, setProjects] = useState<Project[]>([])
@@ -27,7 +31,7 @@ export const AdminDashboardPage = () => {
             .select('*')
             .order('created_at', { ascending: false })
             .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1)
-          
+
           if (!error && data) setProfessors(data)
         } else if (activeTab === 'projects') {
           const { data, error } = await supabase
@@ -35,7 +39,7 @@ export const AdminDashboardPage = () => {
             .select(`*, professor:profiles(full_name, email)`)
             .order('created_at', { ascending: false })
             .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1)
-          
+
           if (!error && data) setProjects(data)
         }
       } finally {
@@ -46,15 +50,35 @@ export const AdminDashboardPage = () => {
     fetchData()
   }, [activeTab, currentPage, searchTerm])
 
-const updateProfessorRole = async (id: string, role: UserRole) => {
-     await supabase.from('profiles').update({ role }).eq('id', id)
-     setProfessors(prev => prev.map(p => p.id === id ? { ...p, role } : p))
-   }
+  const [roleError, setRoleError] = useState<string | null>(null)
 
-   const updateProjectStatus = async (id: string, status: 'draft' | 'published' | 'archived') => {
-     await supabase.from('projects').update({ status }).eq('id', id)
-     setProjects(prev => prev.map(p => p.id === id ? { ...p, status } : p))
-   }
+  const updateProfessorRole = async (id: string, role: UserRole) => {
+    if (!user?.id) return
+    try {
+      setRoleError(null)
+      const updated = await profileService.updateProfessorRole(id, role, {
+        userId: user.id,
+        isAdmin: user.role === 'admin',
+      })
+      setProfessors(prev => prev.map(p => (p.id === id ? updated : p)))
+    } catch (err) {
+      setRoleError(err instanceof Error ? err.message : 'Error al actualizar el rol')
+    }
+  }
+
+  const updateProjectStatus = async (id: string, status: 'draft' | 'published' | 'archived') => {
+    if (!user?.id) return
+    try {
+      await projectsService.updateProject(
+        id,
+        { status },
+        { userId: user.id, isAdmin: user.role === 'admin' }
+      )
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, status } : p))
+    } catch (err) {
+      console.error('Error updating project status:', err)
+    }
+  }
 
   if (loading) return <LoadingSpinnerCentered text="Cargando panel de administración..." />
 
@@ -65,13 +89,17 @@ const updateProfessorRole = async (id: string, role: UserRole) => {
         <h1 className="text-2xl font-bold text-navy-900">Panel de Administración</h1>
       </div>
 
+      {roleError && (
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+          {roleError}
+        </div>
+      )}
+
       <div className="border-b border-navy-200 mb-6">
         <nav className="flex space-x-8">
           {[
             { id: 'professors', label: 'Profesores', icon: Users },
             { id: 'projects', label: 'Proyectos', icon: FolderOpen },
-            { id: 'publications', label: 'Publicaciones', icon: BookOpen },
-            { id: 'resources', label: 'Recursos', icon: FileText },
           ].map(tab => (
             <button
               key={tab.id}

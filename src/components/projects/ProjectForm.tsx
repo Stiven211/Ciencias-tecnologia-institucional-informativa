@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -28,9 +29,11 @@ interface ProjectFormProps {
 }
 
 export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
+  const navigate = useNavigate()
   const [coverImage, setCoverImage] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(project?.cover_image || null)
   const [galleryImages, setGalleryImages] = useState<string[]>(project?.gallery_images || [])
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [categories, setCategories] = useState<string[]>(project?.categories || [])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -72,13 +75,8 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
   }
 
   const onSubmit: SubmitHandler<ProjectFormValues> = async (data) => {
-    console.log('[ProjectForm] handleSubmit triggered')
-    console.log('[ProjectForm] formData:', data)
-    console.log('[ProjectForm] user:', user)
-
     if (!user?.id) {
       const errorMsg = 'Usuario no autenticado. Por favor, inicia sesión.'
-      console.error('[ProjectForm] Auth error:', errorMsg)
       setError(errorMsg)
       showError('Error de autenticación', errorMsg)
       return
@@ -88,48 +86,89 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
       setIsSubmitting(true)
       setError(null)
 
-      let coverImageUrl = project?.cover_image || ''
+      const isAdmin = user.role === 'admin'
 
-      if (coverImage) {
-        console.log('[ProjectForm] Uploading cover image...')
-        try {
-          coverImageUrl = await projectsService.uploadCoverImage(coverImage, project?.id || crypto.randomUUID())
-          console.log('[ProjectForm] Cover image uploaded:', coverImageUrl)
-        } catch (uploadErr) {
-          console.error('[ProjectForm] Cover image upload failed:', uploadErr)
-          const errorMsg = uploadErr instanceof Error ? uploadErr.message : 'No se pudo subir la imagen'
-          setError(`Error al subir imagen: ${errorMsg}`)
-          showError('Error al subir imagen', errorMsg)
-          return
-        }
-      }
-
-      const projectData = {
+      const baseProjectData = {
         title: data.title,
         slug: data.slug,
         description: data.description,
         content: data.content,
         status: data.status,
         professor_id: user.id,
-        cover_image: coverImageUrl,
+        cover_image: null as string | null,
         technologies: data.technologies.split(',').map((t) => t.trim()).filter(Boolean),
         categories: categories,
-        gallery_images: galleryImages,
+        gallery_images: [] as string[],
       }
-      console.log('[ProjectForm] Sending project data:', projectData)
+
+      let savedProject: Project
 
       if (project) {
-        await projectsService.updateProject(project.id, projectData)
+        savedProject = await projectsService.updateProject(
+          project.id,
+          { ...baseProjectData, cover_image: project.cover_image, gallery_images: galleryImages },
+          { userId: user.id, isAdmin }
+        )
         success('Proyecto actualizado', 'El proyecto se ha actualizado correctamente')
       } else {
-        await projectsService.createProject(projectData as ProjectInsert & { professor_id: string })
+        savedProject = await projectsService.createProject(baseProjectData as ProjectInsert & { professor_id: string })
         success('Proyecto creado', 'El proyecto se ha creado correctamente')
+      }
+
+      if (coverImage) {
+        try {
+          const coverImageUrl = await projectsService.uploadCoverImage(coverImage, savedProject.id, user.id)
+          await projectsService.updateProject(
+            savedProject.id,
+            { cover_image: coverImageUrl },
+            { userId: user.id, isAdmin }
+          )
+        } catch (uploadErr) {
+          const uploadMsg = uploadErr instanceof Error ? uploadErr.message : 'No se pudo subir la imagen'
+          const fallbackMsg = 'El proyecto se creó pero la portada no se subió. Puedes editarlo y volver a subirla.'
+          setError(fallbackMsg)
+          showError('Error al subir imagen', uploadMsg)
+          if (!project) {
+            navigate(`/dashboard/projects/${savedProject.id}/edit`)
+            return
+          }
+          return
+        }
+      }
+
+      if (galleryFiles.length > 0) {
+        try {
+          const uploadedGalleryUrls: string[] = []
+          for (const file of galleryFiles) {
+            const url = await projectsService.uploadGalleryImage(file, savedProject.id, user.id)
+            uploadedGalleryUrls.push(url)
+          }
+          const nextGallery = [...galleryImages, ...uploadedGalleryUrls]
+          await projectsService.updateProject(
+            savedProject.id,
+            { gallery_images: nextGallery },
+            { userId: user.id, isAdmin }
+          )
+          setGalleryImages(nextGallery)
+          setGalleryFiles([])
+        } catch (galleryErr) {
+          const galleryMsg = galleryErr instanceof Error ? galleryErr.message : 'No se pudieron subir las imágenes de galería.'
+          const fallbackGalleryMsg = project
+            ? 'El proyecto se actualizó pero la galería no se subió. Puedes editar y volver a intentarlo.'
+            : 'El proyecto se creó pero la galería no se subió. Puedes editarlo y volver a subirla.'
+          setError(fallbackGalleryMsg)
+          showError('Error al subir galería', galleryMsg)
+          if (!project) {
+            navigate(`/dashboard/projects/${savedProject.id}/edit`)
+            return
+          }
+          return
+        }
       }
 
       onSuccess()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al guardar el proyecto'
-      console.error('[ProjectForm] Submit error:', err)
       setError(errorMessage)
       showError('Error', errorMessage)
     } finally {
@@ -218,7 +257,10 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
           <GalleryUpload
             images={galleryImages}
             projectId={project?.id || 'new'}
-            onChange={setGalleryImages}
+            userId={user.id}
+            files={galleryFiles}
+            onFilesChange={setGalleryFiles}
+            onImagesChange={setGalleryImages}
           />
         </div>
 

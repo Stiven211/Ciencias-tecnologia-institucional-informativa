@@ -2,7 +2,10 @@ import {
   LayoutDashboard,
   FolderOpen,
   Shield,
-  User
+  User,
+  FileText,
+  BookOpen,
+  Calendar
 } from 'lucide-react'
 import type { Permission, UserRole } from './permissions'
 
@@ -26,6 +29,24 @@ export const navigation: NavItem[] = [
     href: '/dashboard/projects', 
     icon: FolderOpen, 
     permission: 'create_project'
+  },
+  { 
+    name: 'Mis Recursos', 
+    href: '/dashboard/resources', 
+    icon: FileText, 
+    permission: 'create_resource'
+  },
+  { 
+    name: 'Publicaciones', 
+    href: '/dashboard/publications', 
+    icon: BookOpen, 
+    permission: 'create_publication'
+  },
+  { 
+    name: 'Actividades', 
+    href: '/dashboard/activities', 
+    icon: Calendar, 
+    permission: 'create_activity'
   },
   { 
     name: 'Mi Perfil', 

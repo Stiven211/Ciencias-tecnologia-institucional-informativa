@@ -6,7 +6,7 @@ import { useToast } from '../../components/ui/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Mail } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
+import { authService } from '../../services/auth.service'
 import { useState } from 'react'
 
 const forgotPasswordSchema = z.object({
@@ -31,15 +31,10 @@ export const ForgotPasswordPage = () => {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setLoading(true)
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-      
-      if (error) throw error
-      
+      await authService.resetPassword(data.email, `${window.location.origin}/reset-password`)
       success(
         'Correo enviado',
-        'Se ha enviado un enlace de recuperación a tu correo electrónico'
+        'Si la cuenta existe, se ha enviado un enlace de recuperación a tu correo electrónico'
       )
       navigate('/login')
     } catch (err) {

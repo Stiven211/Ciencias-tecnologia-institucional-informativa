@@ -7,11 +7,15 @@ import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { navigation } from '../../config/navigation'
 
-export const Sidebar = () => {
+interface SidebarProps {
+  onNavigate?: () => void
+}
+
+export const Sidebar = ({ onNavigate }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const { user, hasPermission, hasRole } = useAuthStore()
-  
+
   const visibleNav = navigation.filter(item => {
     if (!hasPermission(item.permission)) return false
     if (item.roles && !hasRole(item.roles)) return false
@@ -37,11 +41,15 @@ export const Sidebar = () => {
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {visibleNav.map((item) => {
-          const isActive = location.pathname === item.href || location.pathname.startsWith(item.href)
+          const isDashboardRoot = item.href === '/dashboard' || item.href === '/dashboard/'
+          const isActive = isDashboardRoot
+            ? location.pathname === '/dashboard' || location.pathname === '/dashboard/'
+            : location.pathname === item.href || location.pathname.startsWith(item.href + '/')
           return (
             <Link
               key={item.name}
               to={item.href}
+              onClick={onNavigate}
               className={`flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${
                 isActive 
                   ? 'bg-blue-500/20 text-blue-300' 

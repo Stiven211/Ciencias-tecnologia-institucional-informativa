@@ -5,9 +5,9 @@ export interface Profile {
   email: string
   full_name: string
   role: UserRole
-  avatar_url?: string
-  bio?: string
-  specialization?: string
+  avatar_url: string | null
+  bio: string | null
+  specialization: string | null
   created_at: string
   updated_at: string
 }
@@ -17,14 +17,14 @@ export interface Project {
   professor_id: string
   title: string
   slug: string
-  description?: string
-  content?: string
-  status?: 'draft' | 'published' | 'archived'
-  cover_image?: string
-  gallery_images?: string[]
-  technologies?: string[]
-  categories?: string[]
-  professor?: Profile
+  description: string | null
+  content: string | null
+  status: 'draft' | 'published' | 'archived'
+  cover_image: string | null
+  gallery_images: string[] | null
+  technologies: string[] | null
+  categories: string[] | null
+  professor?: Pick<Profile, 'id' | 'full_name' | 'avatar_url'> | null
   created_at: string
   updated_at: string
 }
@@ -37,48 +37,61 @@ export interface ProjectFilters {
   professorId?: string
 }
 
-export type ProjectInsert = Omit<Project, 'id' | 'created_at' | 'updated_at' | 'professor'>
+export type ProjectInsert = Pick<Project, 'professor_id' | 'title' | 'slug'> &
+  Partial<Omit<Project, 'id' | 'created_at' | 'updated_at' | 'professor' | 'professor_id' | 'title' | 'slug'>>
 
 export interface Resource {
   id: string
   professor_id: string
   title: string
-  type?: 'document' | 'video' | 'link' | 'image'
-  file_url?: string
-  description?: string
+  type: 'document' | 'video' | 'link' | 'image'
+  file_url: string | null
+  description: string | null
+  professor?: Pick<Profile, 'full_name' | 'avatar_url'> | null
   created_at: string
   updated_at: string
 }
+
+export type ResourceInsert = Pick<Resource, 'professor_id' | 'title' | 'type'> &
+  Partial<Omit<Resource, 'id' | 'created_at' | 'updated_at' | 'professor' | 'professor_id' | 'title' | 'type'>>
 
 export interface Publication {
   id: string
   professor_id: string
   title: string
-  excerpt?: string
-  content?: string
-  cover_image?: string
-  published?: boolean
-  published_at?: string
+  excerpt: string | null
+  content: string | null
+  cover_image: string | null
+  published: boolean
+  published_at: string | null
+  professor?: Pick<Profile, 'full_name' | 'avatar_url'> | null
   created_at: string
   updated_at: string
 }
+
+export type PublicationInsert = Pick<Publication, 'professor_id' | 'title'> &
+  Partial<Omit<Publication, 'id' | 'created_at' | 'updated_at' | 'professor' | 'published_at' | 'professor_id' | 'title'>>
 
 export interface Activity {
   id: string
   professor_id: string
   title: string
-  description?: string
-  due_date?: string
+  description: string | null
+  due_date: string | null
+  professor?: Pick<Profile, 'full_name' | 'avatar_url'> | null
   created_at: string
   updated_at: string
 }
+
+export type ActivityInsert = Pick<Activity, 'professor_id' | 'title'> &
+  Partial<Omit<Activity, 'id' | 'created_at' | 'updated_at' | 'professor' | 'professor_id' | 'title'>>
 
 export interface User {
   id: string
   email: string
   fullName: string
   role: UserRole
-  avatarUrl?: string
+  avatarUrl?: string | null
   permissions?: Permission[]
 }
 

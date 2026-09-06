@@ -28,42 +28,22 @@ export const PublicNavbar = () => {
             </div>
           </div>
 
-          <div className="hidden md:flex md:items-center md:space-x-6">
-            {publicNavigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="px-3 py-2 rounded-md text-sm font-medium text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
-            <Link to="/dashboard/projects" className="px-3 py-2 rounded-md text-sm font-medium text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors">
-              Mis Proyectos
-            </Link>
-
-            <div className="flex items-center space-x-3">
-              {user ? (
-                <>
-                  <span className="text-sm font-medium text-navy-700">{user.fullName}</span>
-                  <Link to="/dashboard" className="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors">
-                    Dashboard
-                  </Link>
-                </>
-              ) : (
-                <>
-                  {canRegister && (
-                    <Link to="/register" className="px-3 py-1 border border-navy-300 text-navy-700 text-sm rounded-md hover:bg-navy-50 transition-colors">
-                      Registrarse
-                    </Link>
-                  )}
-                  <Link to="/login" className="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors">
-                    Iniciar sesión
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
+           <div className="hidden md:flex md:items-center md:space-x-6">
+             {publicNavigation.map((item) => (
+               <Link
+                 key={item.name}
+                 to={item.href}
+                 className="px-3 py-2 rounded-md text-sm font-medium text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors"
+               >
+                 {item.name}
+               </Link>
+             ))}
+             {user && (
+               <Link to="/dashboard" className="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors">
+                 Ir al panel
+               </Link>
+             )}
+           </div>
 
           <div className="md:hidden flex items-center">
             <button
@@ -92,43 +72,29 @@ export const PublicNavbar = () => {
               </button>
             </div>
 
-            <div className="space-y-1">
-              {publicNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={closeMenu}
-                  className="flex items-center px-3 py-3 rounded-lg text-base font-medium text-navy-700 hover:bg-navy-50 transition-colors"
-                >
-                  {item.name}
-                </Link>
-              ))}
-              <Link to="/dashboard/projects" onClick={closeMenu} className="flex items-center px-3 py-3 rounded-lg text-base font-medium text-navy-700 hover:bg-navy-50 transition-colors">
-                Mis Proyectos
-              </Link>
-            </div>
+             <div className="space-y-1">
+               {publicNavigation.map((item) => (
+                 <Link
+                   key={item.name}
+                   to={item.href}
+                   onClick={closeMenu}
+                   className="flex items-center px-3 py-3 rounded-lg text-base font-medium text-navy-700 hover:bg-navy-50 transition-colors"
+                 >
+                   {item.name}
+                 </Link>
+               ))}
+             </div>
 
-            <div className="mt-auto space-y-2">
-              {user ? (
-                <>
-                  <div className="px-3 py-2 text-sm text-navy-600">{user.fullName}</div>
-                  <Link to="/dashboard" onClick={closeMenu} className="block px-3 py-2 text-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                    Dashboard
-                  </Link>
-                </>
-              ) : (
-                <>
-                  {canRegister && (
-                    <Link to="/register" onClick={closeMenu} className="block px-3 py-2 text-center border border-navy-300 rounded-lg hover:bg-navy-50 transition-colors">
-                      Registrarse
-                    </Link>
-                  )}
-                  <Link to="/login" onClick={closeMenu} className="block px-3 py-2 text-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                    Iniciar sesión
-                  </Link>
-                </>
-              )}
-            </div>
+             <div className="mt-auto space-y-2">
+               {user && (
+                 <>
+                   <div className="px-3 py-2 text-sm text-navy-600">{user.fullName}</div>
+                   <Link to="/dashboard" onClick={closeMenu} className="block px-3 py-2 text-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                     Ir al panel
+                   </Link>
+                 </>
+               )}
+             </div>
           </div>
         </div>
       )}

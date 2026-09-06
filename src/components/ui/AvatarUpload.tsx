@@ -41,14 +41,21 @@ export const AvatarUpload = ({
     setIsUploadingState(true)
 
     try {
+      if (!user?.id) {
+        setUploadError('Usuario no autenticado')
+        return
+      }
+
       // Crear una URL temporal para vista previa
       const tempUrl = URL.createObjectURL(file)
       setPreviewUrl(tempUrl)
 
-      // Generar un nombre de archivo único
+      // Generar un nombre de archivo único dentro de la carpeta del usuario
+      // Path final en el bucket: {userId}/{userId}-avatar-{timestamp}.{ext}
+      // Esto cumple storage.foldername(name)[1] = auth.uid()::text
       const fileExt = file.name.split('.').pop()
-      const fileName = `${user?.id}-avatar-${Date.now()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      const fileName = `${user.id}-avatar-${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
 
       // Subir a Supabase Storage
       const { error: uploadError } = await supabase.storage
