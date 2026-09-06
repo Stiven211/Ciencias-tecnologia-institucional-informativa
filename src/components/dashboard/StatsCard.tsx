@@ -1,16 +1,16 @@
-import type { LucideIcon } from 'lucide-react'
-import type { HTMLAttributes } from 'react'
+import type { ComponentType } from 'react'
 import { Card } from '../ui/Card'
 
-interface StatsCardProps extends HTMLAttributes<HTMLDivElement> {
+interface StatsCardProps {
   title: string
   value: string | number
-  icon: LucideIcon
+  icon: ComponentType<{ size?: number; className?: string }>
   trend?: {
     value: number
     positive: boolean
   }
   description?: string
+  className?: string
 }
 
 export const StatsCard = ({ 

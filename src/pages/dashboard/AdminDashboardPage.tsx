@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Shield, Users, FolderOpen, BookOpen, FileText, Search } from 'lucide-react'
+import { Shield, Users, FolderOpen, Search } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { projectsService } from '../../services/projects.service'
 import { profileService } from '../../services/profile.service'

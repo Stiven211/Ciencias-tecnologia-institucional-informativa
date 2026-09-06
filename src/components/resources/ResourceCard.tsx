@@ -35,9 +35,6 @@ export const ResourceCard = ({ resource, onDelete }: ResourceCardProps) => {
   const canEdit = isOwner || user?.role === 'admin'
   const Icon = typeIcons[resource.type] || Paperclip
 
-  const isExternalLink = resource.type === 'link' && resource.file_url?.startsWith('http')
-  const href = isExternalLink ? resource.file_url : undefined
-
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-navy-200 hover:shadow-md transition-shadow">
       <div className="p-6">

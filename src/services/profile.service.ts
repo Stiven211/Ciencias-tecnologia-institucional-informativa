@@ -13,7 +13,7 @@ export interface UpdateRoleContext {
   isAdmin: boolean
 }
 
-const ensure = (error: { message: string } | null, fallback: string): never => {
+const ensure = (error: { message: string } | null, fallback: string): void => {
   if (error) throw new Error(fallback)
 }
 

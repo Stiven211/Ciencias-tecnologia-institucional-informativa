@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Edit, Trash2, BookOpen, FileText, Image } from 'lucide-react'
+import { Edit, Trash2, FileText, Image } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import type { Publication } from '../../types'
 

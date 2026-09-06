@@ -1,21 +1,16 @@
 import { useEffect } from 'react'
 import { X, Plus } from 'lucide-react'
-import { projectsService } from '../../services/projects.service'
-import { useToast } from '../ui/ToastContext'
 import { STEM_CATEGORIES } from '../../config/stemCategories'
 
 interface GalleryUploadProps {
   images: string[]
   projectId: string
-  userId: string
   files: File[]
   onFilesChange: (files: File[]) => void
   onImagesChange: (images: string[]) => void
 }
 
-export const GalleryUpload = ({ images, projectId, userId, files, onFilesChange, onImagesChange }: GalleryUploadProps) => {
-  const { success, error: showError } = useToast()
-
+export const GalleryUpload = ({ images, projectId, files, onFilesChange, onImagesChange }: GalleryUploadProps) => {
   const previews = files.map(file => URL.createObjectURL(file))
 
   useEffect(() => {

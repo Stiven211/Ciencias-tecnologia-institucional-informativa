@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import { useInstitutionalUsers } from '../../hooks/useInstitutionalUsers'
 import { X, Menu } from 'lucide-react'
 import { publicNavigation } from '../../config/publicNavigation'
 
 export const PublicNavbar = () => {
   const { user } = useAuthStore()
-  const { canRegister } = useInstitutionalUsers()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const closeMenu = () => setMobileOpen(false)

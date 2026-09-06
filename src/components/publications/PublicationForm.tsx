@@ -13,7 +13,7 @@ const publicationSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
   excerpt: z.string().optional(),
   content: z.string().optional(),
-  published: z.boolean().default(false),
+  published: z.boolean().optional(),
   published_at: z.string().optional(),
 })
 
@@ -43,7 +43,6 @@ export const PublicationForm = ({ publication, onSuccess }: PublicationFormProps
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<PublicationFormValues>({
     resolver: zodResolver(publicationSchema),
@@ -85,7 +84,7 @@ export const PublicationForm = ({ publication, onSuccess }: PublicationFormProps
         title: data.title,
         excerpt: data.excerpt || null,
         content: data.content || null,
-        published: data.published,
+        published: !!data.published,
         published_at: data.published_at ? new Date(data.published_at).toISOString() : null,
         professor_id: user.id,
         cover_image: publication?.cover_image || null,

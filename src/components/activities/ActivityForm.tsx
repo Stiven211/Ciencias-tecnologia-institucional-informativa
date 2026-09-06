@@ -1,8 +1,7 @@
-import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { activitiesService } from '../../services/activities.service'
@@ -24,7 +23,6 @@ interface ActivityFormProps {
 }
 
 export const ActivityForm = ({ activity, onSuccess }: ActivityFormProps) => {
-  const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuthStore()

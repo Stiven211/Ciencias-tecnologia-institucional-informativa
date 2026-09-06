@@ -4,7 +4,6 @@ import type { Publication } from '../types'
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB
 const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024 // 20MB
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const ALLOWED_DOCUMENT_TYPES = [
   'application/pdf',
   'application/msword',

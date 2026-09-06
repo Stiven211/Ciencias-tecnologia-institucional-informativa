@@ -254,14 +254,15 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
         </div>
 
         <div className="md:col-span-2">
+        {user && (
           <GalleryUpload
             images={galleryImages}
             projectId={project?.id || 'new'}
-            userId={user.id}
             files={galleryFiles}
             onFilesChange={setGalleryFiles}
             onImagesChange={setGalleryImages}
           />
+        )}
         </div>
 
         <div className="md:col-span-2">

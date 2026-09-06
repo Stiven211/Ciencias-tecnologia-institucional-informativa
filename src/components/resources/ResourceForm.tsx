@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -25,7 +24,6 @@ interface ResourceFormProps {
 }
 
 export const ResourceForm = ({ resource, onSuccess }: ResourceFormProps) => {
-  const navigate = useNavigate()
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(resource?.file_url || null)
   const [isSubmitting, setIsSubmitting] = useState(false)
