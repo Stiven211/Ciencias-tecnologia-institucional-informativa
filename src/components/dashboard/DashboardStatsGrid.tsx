@@ -15,21 +15,18 @@ const fallbackStats = [
     title: 'Mis Proyectos',
     value: 0,
     icon: BookOpen,
-    trend: { value: 2, positive: true },
     description: 'activos este semestre',
   },
   {
     title: 'Recursos',
     value: 0,
     icon: FolderOpen,
-    trend: { value: 5, positive: true },
     description: 'compartidos con estudiantes',
   },
   {
     title: 'Colaboradores',
     value: 0,
     icon: Users,
-    trend: { value: 1, positive: true },
     description: 'con otros profesores',
   },
 ]
@@ -57,21 +54,18 @@ export const DashboardStatsGrid = ({ stats, loading }: DashboardStatsGridProps) 
           title: 'Mis Proyectos',
           value: stats.projects,
           icon: BookOpen,
-          trend: { value: 2, positive: true },
           description: 'activos este semestre',
         },
         {
           title: 'Recursos',
           value: stats.resources,
           icon: FolderOpen,
-          trend: { value: 5, positive: true },
           description: 'compartidos con estudiantes',
         },
         {
           title: 'Colaboradores',
           value: stats.collaborators,
           icon: Users,
-          trend: { value: 1, positive: true },
           description: 'con otros profesores',
         },
       ]

@@ -3,9 +3,50 @@
 
 @theme {
   --font-family-sans: 'Space Grotesk', system-ui, sans-serif;
+
+  --color-navy-50: #f8fafc;
+  --color-navy-100: #f1f5f9;
+  --color-navy-200: #e2e8f0;
+  --color-navy-300: #cbd5e1;
+  --color-navy-400: #94a3b8;
+  --color-navy-500: #64748b;
+  --color-navy-600: #475569;
+  --color-navy-700: #334155;
+  --color-navy-800: #1e293b;
+  --color-navy-900: #0f172a;
+  --color-navy-950: #020617;
+
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+
+  --color-orange-500: #f97316;
+  --color-orange-600: #ea580c;
+
+  --color-purple-500: #a855f7;
+  --color-purple-600: #9333ea;
+
+  --color-lime-500: #d9f66a;
+  --color-coral-500: #ff8068;
 }
 
-:root { font-family: 'Space Grotesk', system-ui, sans-serif; color: #20221f; background: #f3f0e8; font-synthesis: none; text-rendering: optimizeLegibility; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+:root { font-family: 'Space Grotesk', system-ui, sans-serif; color: #0f172a; font-synthesis: none; text-rendering: optimizeLegibility; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #0f172a;
+}
+
 #root { min-height: 100vh; }
+
 button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid #ff8068; outline-offset: 3px; }
