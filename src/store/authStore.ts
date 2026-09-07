@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabaseClient'
 import { hasPermission as checkPermission, hasRole as checkRole, PERMISSIONS, isOwner as checkOwner } from '../config/permissions'
 import { authService } from '../services/auth.service'
 
+const INIT_TIMEOUT_MS = 8000
+
 interface AuthState {
   user: User | null
   profile: Profile | null
@@ -29,37 +31,58 @@ type Unsubscribe = () => void
 let authListener: Unsubscribe | null = null
 
 const fetchProfileAndBuildUser = async (userId: string, email: string | null | undefined): Promise<{ user: User; profile: Profile | null }> => {
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
 
-  if (data) {
-    const profile = data as Profile
+    if (data) {
+      const profile = data as Profile
+      return {
+        profile,
+        user: {
+          id: userId,
+          email: profile.email,
+          fullName: profile.full_name,
+          role: profile.role,
+          avatarUrl: profile.avatar_url,
+          permissions: PERMISSIONS[profile.role] ?? [],
+        },
+      }
+    }
+
     return {
-      profile,
+      profile: null,
       user: {
         id: userId,
-        email: profile.email,
-        fullName: profile.full_name,
-        role: profile.role,
-        avatarUrl: profile.avatar_url,
-        permissions: PERMISSIONS[profile.role] ?? [],
+        email: email ?? '',
+        fullName: email?.split('@')[0] ?? 'User',
+        role: 'visitor',
+        permissions: PERMISSIONS['visitor'] ?? [],
+      },
+    }
+  } catch {
+    return {
+      profile: null,
+      user: {
+        id: userId,
+        email: email ?? '',
+        fullName: email?.split('@')[0] ?? 'User',
+        role: 'visitor',
+        permissions: PERMISSIONS['visitor'] ?? [],
       },
     }
   }
+}
 
-  return {
-    profile: null,
-    user: {
-      id: userId,
-      email: email ?? '',
-      fullName: email?.split('@')[0] ?? 'User',
-      role: 'visitor',
-      permissions: PERMISSIONS['visitor'] ?? [],
-    },
-  }
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout>
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('timeout')), ms)
+  })
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer))
 }
 
 const initAuthListener = (): void => {
@@ -67,8 +90,12 @@ const initAuthListener = (): void => {
   const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
       if (session?.user) {
-        const { user, profile } = await fetchProfileAndBuildUser(session.user.id, session.user.email)
-        useAuthStore.setState({ user, profile, loading: false, initialized: true })
+        try {
+          const { user, profile } = await fetchProfileAndBuildUser(session.user.id, session.user.email)
+          useAuthStore.setState({ user, profile, loading: false, initialized: true })
+        } catch {
+          useAuthStore.setState({ loading: false, initialized: true })
+        }
       } else {
         useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
       }
@@ -131,10 +158,13 @@ export const useAuthStore = create<AuthState>()(
 
         set({ loading: true })
         try {
-          const { data: { session } } = await supabase.auth.getSession()
+          const { data: { session } } = await withTimeout(supabase.auth.getSession(), INIT_TIMEOUT_MS)
 
           if (session?.user) {
-            const { user, profile } = await fetchProfileAndBuildUser(session.user.id, session.user.email)
+            const { user, profile } = await withTimeout(
+              fetchProfileAndBuildUser(session.user.id, session.user.email),
+              INIT_TIMEOUT_MS,
+            )
             set({ user, profile, loading: false, initialized: true })
           } else {
             set({ user: null, profile: null, loading: false, initialized: true })
@@ -147,7 +177,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null })
         try {
           const user = await authService.signIn(email, password)
-          set({ user, loading: false, error: null })
+          set({ user, loading: false, initialized: true })
           return user
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error al iniciar sesión'
@@ -159,7 +189,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null })
         try {
           const user = await authService.signUp(email, password, fullName)
-          set({ user, loading: false, error: null })
+          set({ user, loading: false, initialized: true })
           return user
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error al registrarse'

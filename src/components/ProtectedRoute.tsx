@@ -1,7 +1,10 @@
 import { Navigate, useLocation, Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useInstitutionalUsers } from '../hooks/useInstitutionalUsers'
 import type { Permission, UserRole } from '../config/permissions'
+
+const LOADING_TIMEOUT_MS = 10000
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -18,10 +21,53 @@ export const ProtectedRoute = ({
   requireAuth = true,
   redirectTo = '/login'
 }: ProtectedRouteProps) => {
-  const { user, loading, initialized } = useAuthStore()
+  const { user, loading, initialized, initialize } = useAuthStore()
   const location = useLocation()
+  const [timedOut, setTimedOut] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const startRef = useRef<number>(Date.now())
+
+  useEffect(() => {
+    startRef.current = Date.now()
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (!loading || initialized) {
+      setTimedOut(false)
+      return
+    }
+    timerRef.current = setTimeout(() => {
+      if (loading || !initialized) {
+        setTimedOut(true)
+      }
+    }, LOADING_TIMEOUT_MS)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [loading, initialized])
 
   if (loading || !initialized) {
+    if (timedOut) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-navy-50">
+          <div className="text-center">
+            <p className="text-navy-600 mb-4">La verificación está tardando demasiado.</p>
+            <div className="space-x-3">
+              <button
+                onClick={initialize}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Reintentar
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-navy-200 text-navy-800 rounded-md hover:bg-navy-300"
+              >
+                Recargar página
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-50">
         <div className="text-center">
@@ -75,11 +121,72 @@ export const PublicOnlyRoute = ({
   children, 
   redirectTo = '/dashboard' 
 }: PublicOnlyRouteProps) => {
-  const { user, loading, initialized } = useAuthStore()
+  const { user, loading, initialized, initialize } = useAuthStore()
   const { canRegister, loading: checkingLimit } = useInstitutionalUsers()
   const location = useLocation()
+  const [timedOut, setTimedOut] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  if (loading || !initialized || checkingLimit) {
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (!loading && !checkingLimit && initialized) {
+      setTimedOut(false)
+      return
+    }
+    timerRef.current = setTimeout(() => {
+      if (loading || !initialized || checkingLimit) {
+        setTimedOut(true)
+      }
+    }, LOADING_TIMEOUT_MS)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [loading, initialized, checkingLimit])
+
+  const isChecking = loading || !initialized || checkingLimit
+
+  if (location.pathname === '/register') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <h2 className="text-2xl font-bold text-navy-900 mb-4">Registro no disponible</h2>
+            <p className="text-navy-600 mb-6">
+              El registro público está cerrado. Contacte al administrador.
+            </p>
+            <Link to="/login" className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+              Volver al inicio de sesión
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isChecking) {
+    if (timedOut) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-navy-50">
+          <div className="text-center">
+            <p className="text-navy-600 mb-4">La verificación está tardando demasiado.</p>
+            <div className="space-x-3">
+              <button
+                onClick={initialize}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Reintentar
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-navy-200 text-navy-800 rounded-md hover:bg-navy-300"
+              >
+                Recargar página
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-50">
         <div className="text-center">
@@ -94,7 +201,7 @@ export const PublicOnlyRoute = ({
     return <Navigate to={redirectTo} replace />
   }
 
-  if (canRegister === false && location.pathname === '/register') {
+  if (canRegister === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
         <div className="w-full max-w-md space-y-8">
@@ -103,10 +210,7 @@ export const PublicOnlyRoute = ({
             <p className="text-navy-600 mb-6">
               Se alcanzó el límite de usuarios institucionales. Contacte al administrador.
             </p>
-            <Link
-              to="/login"
-              className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
-            >
+            <Link to="/login" className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
               Volver al inicio de sesión
             </Link>
           </div>

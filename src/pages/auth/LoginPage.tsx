@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../components/ui/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Mail, Lock } from 'lucide-react'
+import { Mail, Lock, } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'El email es requerido').email('Email inválido'),
@@ -83,12 +83,6 @@ export const LoginPage = () => {
           </form>
 
           <div className="mt-6 text-center space-y-2">
-            <p className="text-sm text-navy-600">
-              ¿No tienes cuenta?{' '}
-              <Link to="/register" className="text-green-600 hover:text-green-700 font-medium">
-                Regístrate aquí
-              </Link>
-            </p>
             <p className="text-sm">
               <Link to="/forgot-password" className="text-navy-500 hover:text-navy-700">
                 ¿Olvidaste tu contraseña?

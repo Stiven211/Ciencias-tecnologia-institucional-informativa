@@ -24,7 +24,6 @@ import { PublicProjectDetailPage } from './pages/public/PublicProjectDetailPage'
 import { PublicationsCatalogPage } from './pages/public/PublicationsCatalogPage'
 import { PublicPublicationDetailPage } from './pages/public/PublicPublicationDetailPage'
 import { LoginPage } from './pages/auth/LoginPage'
-import { RegisterPage } from './pages/auth/RegisterPage'
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
 import { Navigate } from 'react-router-dom'
@@ -46,22 +45,17 @@ function App() {
              <Route path="/publicaciones" element={<PublicationsCatalogPage />} />
              <Route path="/publicaciones/:id" element={<PublicPublicationDetailPage />} />
              <Route path="/profesor/:id" element={<ProfessorProfilePage />} />
-            
+             
             {/* Auth routes - only for non-authenticated users */}
             <Route path="/login" element={
               <PublicOnlyRoute>
                 <LoginPage />
               </PublicOnlyRoute>
             } />
-            <Route path="/register" element={
-              <PublicOnlyRoute>
-                <RegisterPage />
-              </PublicOnlyRoute>
-            } />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             
-{/* Dashboard routes - protected */}
+            {/* Dashboard routes - protected */}
              <Route path="/dashboard" element={
                <ProtectedRoute>
                  <DashboardLayout />
