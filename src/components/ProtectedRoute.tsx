@@ -25,13 +25,13 @@ export const ProtectedRoute = ({
   const location = useLocation()
   const [timedOut, setTimedOut] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const startRef = useRef<number>(Date.now())
+  const startRef = useRef<number>(0)
 
   useEffect(() => {
     startRef.current = Date.now()
     if (timerRef.current) clearTimeout(timerRef.current)
     if (!loading || initialized) {
-      setTimedOut(false)
+      setTimeout(() => setTimedOut(false), 0)
       return
     }
     timerRef.current = setTimeout(() => {
@@ -122,45 +122,57 @@ export const PublicOnlyRoute = ({
   redirectTo = '/dashboard' 
 }: PublicOnlyRouteProps) => {
   const { user, loading, initialized, initialize } = useAuthStore()
-  const { canRegister, loading: checkingLimit } = useInstitutionalUsers()
   const location = useLocation()
   const [timedOut, setTimedOut] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const isRegisterPath = location.pathname === '/register'
+  const { canRegister, loading: checkingLimit } = useInstitutionalUsers()
+
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (!loading && !checkingLimit && initialized) {
-      setTimedOut(false)
+    if (!loading && (!isRegisterPath || !checkingLimit) && initialized) {
+      setTimeout(() => setTimedOut(false), 0)
       return
     }
     timerRef.current = setTimeout(() => {
-      if (loading || !initialized || checkingLimit) {
+      if (loading || !initialized || (isRegisterPath && checkingLimit)) {
         setTimedOut(true)
       }
     }, LOADING_TIMEOUT_MS)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [loading, initialized, checkingLimit])
+  }, [loading, initialized, isRegisterPath, checkingLimit])
 
-  const isChecking = loading || !initialized || checkingLimit
+  const isChecking = loading || !initialized || (isRegisterPath && checkingLimit)
 
-  if (location.pathname === '/register') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
-        <div className="w-full max-w-md space-y-8">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <h2 className="text-2xl font-bold text-navy-900 mb-4">Registro no disponible</h2>
-            <p className="text-navy-600 mb-6">
-              El registro público está cerrado. Contacte al administrador.
-            </p>
-            <Link to="/login" className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-              Volver al inicio de sesión
-            </Link>
+  if (isRegisterPath) {
+    if (checkingLimit) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        </div>
+      )
+    }
+
+    if (!canRegister) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+          <div className="w-full max-w-md space-y-8">
+            <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+              <h2 className="text-2xl font-bold text-navy-900 mb-4">Registro no disponible</h2>
+              <p className="text-navy-600 mb-6">
+                Se alcanzó el límite de usuarios institucionales. Contacte al administrador.
+              </p>
+              <Link to="/login" className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                Volver al inicio de sesión
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
-    )
+      )
+    }
   }
 
   if (isChecking) {
@@ -199,24 +211,6 @@ export const PublicOnlyRoute = ({
 
   if (user) {
     return <Navigate to={redirectTo} replace />
-  }
-
-  if (canRegister === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
-        <div className="w-full max-w-md space-y-8">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <h2 className="text-2xl font-bold text-navy-900 mb-4">Registro no disponible</h2>
-            <p className="text-navy-600 mb-6">
-              Se alcanzó el límite de usuarios institucionales. Contacte al administrador.
-            </p>
-            <Link to="/login" className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-              Volver al inicio de sesión
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return <>{children}</>
