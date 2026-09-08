@@ -25,25 +25,55 @@ export const ProtectedRoute = ({
   const location = useLocation()
   const [timedOut, setTimedOut] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const startRef = useRef<number>(0)
 
   useEffect(() => {
-    startRef.current = Date.now()
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (!loading || initialized) {
+    // If we have a user, don't start the timeout - show content immediately
+    if (user || !loading || initialized) {
       setTimeout(() => setTimedOut(false), 0)
       return
     }
     timerRef.current = setTimeout(() => {
-      if (loading || !initialized) {
+      if (loading && !user) {
         setTimedOut(true)
       }
     }, LOADING_TIMEOUT_MS)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [loading, initialized])
+  }, [loading, initialized, user])
 
+  // If we have a user, render children immediately (don't block on loading/initialized)
+  if (user) {
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+      return <Navigate to="/dashboard" replace />
+    }
+    if (requiredPermissions) {
+      const { hasPermission } = useAuthStore.getState()
+      const allHavePermission = requiredPermissions.every(hasPermission)
+      if (!allHavePermission) {
+        return (
+          <div className="min-h-[60vh] flex items-center justify-center px-6">
+            <div className="max-w-md text-center bg-white border border-red-200 rounded-2xl p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-navy-900 mb-2">Acceso restringido</h2>
+              <p className="text-navy-600 mb-6">
+                No tienes permisos para acceder a esta sección. Si crees que es un error, contacta al administrador.
+              </p>
+              <Link
+                to="/dashboard"
+                className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+              >
+                Volver al inicio
+              </Link>
+            </div>
+          </div>
+        )
+      }
+    }
+    return <>{children}</>
+  }
+
+  // No user: if loading/initialized, show loading or timeout UI
   if (loading || !initialized) {
     if (timedOut) {
       return (
@@ -78,35 +108,9 @@ export const ProtectedRoute = ({
     )
   }
 
-  if (requireAuth && !user) {
+  // No user, not loading, initialized = true -> redirect to login
+  if (requireAuth) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />
-  }
-
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />
-  }
-
-  if (requiredPermissions && user) {
-    const { hasPermission } = useAuthStore.getState()
-    const allHavePermission = requiredPermissions.every(hasPermission)
-    if (!allHavePermission) {
-      return (
-        <div className="min-h-[60vh] flex items-center justify-center px-6">
-          <div className="max-w-md text-center bg-white border border-red-200 rounded-2xl p-8 shadow-sm">
-            <h2 className="text-xl font-semibold text-navy-900 mb-2">Acceso restringido</h2>
-            <p className="text-navy-600 mb-6">
-              No tienes permisos para acceder a esta sección. Si crees que es un error, contacta al administrador.
-            </p>
-            <Link
-              to="/dashboard"
-              className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
-            >
-              Volver al inicio
-            </Link>
-          </div>
-        </div>
-      )
-    }
   }
 
   return <>{children}</>
@@ -117,63 +121,30 @@ interface PublicOnlyRouteProps {
   redirectTo?: string
 }
 
-export const PublicOnlyRoute = ({ 
-  children, 
-  redirectTo = '/dashboard' 
-}: PublicOnlyRouteProps) => {
+// RegisterGate: only used on /register, handles institutional user limit
+const RegisterGate = ({ children, redirectTo = '/dashboard' }: PublicOnlyRouteProps) => {
   const { user, loading, initialized, initialize } = useAuthStore()
-  const location = useLocation()
   const [timedOut, setTimedOut] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const isRegisterPath = location.pathname === '/register'
   const { canRegister, loading: checkingLimit } = useInstitutionalUsers()
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (!loading && (!isRegisterPath || !checkingLimit) && initialized) {
+    if (!loading && !checkingLimit && initialized) {
       setTimeout(() => setTimedOut(false), 0)
       return
     }
     timerRef.current = setTimeout(() => {
-      if (loading || !initialized || (isRegisterPath && checkingLimit)) {
+      if (loading || !initialized || checkingLimit) {
         setTimedOut(true)
       }
     }, LOADING_TIMEOUT_MS)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [loading, initialized, isRegisterPath, checkingLimit])
+  }, [loading, initialized, checkingLimit])
 
-  const isChecking = loading || !initialized || (isRegisterPath && checkingLimit)
-
-  if (isRegisterPath) {
-    if (checkingLimit) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-        </div>
-      )
-    }
-
-    if (!canRegister) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
-          <div className="w-full max-w-md space-y-8">
-            <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-              <h2 className="text-2xl font-bold text-navy-900 mb-4">Registro no disponible</h2>
-              <p className="text-navy-600 mb-6">
-                Se alcanzó el límite de usuarios institucionales. Contacte al administrador.
-              </p>
-              <Link to="/login" className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-                Volver al inicio de sesión
-              </Link>
-            </div>
-          </div>
-        </div>
-      )
-    }
-  }
+  const isChecking = loading || !initialized || checkingLimit
 
   if (isChecking) {
     if (timedOut) {
@@ -200,11 +171,8 @@ export const PublicOnlyRoute = ({
       )
     }
     return (
-      <div className="min-h-screen flex items-center justify-center bg-navy-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-          <p className="mt-4 text-navy-600">Verificando sesión...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     )
   }
@@ -213,5 +181,84 @@ export const PublicOnlyRoute = ({
     return <Navigate to={redirectTo} replace />
   }
 
+  if (!canRegister) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <h2 className="text-2xl font-bold text-navy-900 mb-4">Registro no disponible</h2>
+            <p className="text-navy-600 mb-6">
+              Se alcanzó el límite de usuarios institucionales. Contacte al administrador.
+            </p>
+            <Link to="/login" className="inline-block px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+              Volver al inicio de sesión
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return <>{children}</>
+}
+
+// PublicOnlyRouteInner: handles /login, /forgot-password, /reset-password (no institutional user check)
+const PublicOnlyRouteInner = ({ children, redirectTo = '/dashboard' }: PublicOnlyRouteProps) => {
+  const { user, loading, initialized } = useAuthStore()
+  const [timedOut, setTimedOut] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (!loading && initialized) {
+      setTimeout(() => setTimedOut(false), 0)
+      return
+    }
+    timerRef.current = setTimeout(() => {
+      if (loading || !initialized) {
+        setTimedOut(true)
+      }
+    }, LOADING_TIMEOUT_MS)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [loading, initialized])
+
+  // If we have a user, redirect to dashboard
+  if (user) {
+    return <Navigate to={redirectTo} replace />
+  }
+
+  // If still loading/initialized, show loading briefly but don't block forever
+  // After timeout, show the login form anyway (children)
+  if (loading || !initialized) {
+    if (timedOut) {
+      // Timeout but no user: show the login form (children) instead of timeout UI
+      return <>{children}</>
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-800 py-12 px-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    )
+  }
+
+  // Not loading, initialized, no user: show the login form
+  return <>{children}</>
+}
+
+export const PublicOnlyRoute = ({ 
+  children, 
+  redirectTo = '/dashboard' 
+}: PublicOnlyRouteProps) => {
+  const location = useLocation()
+  const isRegisterPath = location.pathname === '/register'
+
+  // On /register, use RegisterGate which handles institutional user limit
+  if (isRegisterPath) {
+    return <RegisterGate redirectTo={redirectTo}>{children}</RegisterGate>
+  }
+
+  // On /login, /forgot-password, /reset-password: no institutional user check
+  return <PublicOnlyRouteInner redirectTo={redirectTo}>{children}</PublicOnlyRouteInner>
 }

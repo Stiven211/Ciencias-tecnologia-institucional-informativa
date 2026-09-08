@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import { hasPermission as checkPermission, hasRole as checkRole, PERMISSIONS, isOwner as checkOwner } from '../config/permissions'
 import { authService } from '../services/auth.service'
 
-const INIT_TIMEOUT_MS = 8000
+const INIT_TIMEOUT_MS = 20000
 
 interface AuthState {
   user: User | null
@@ -94,7 +94,13 @@ const initAuthListener = (): void => {
           const { user, profile } = await fetchProfileAndBuildUser(session.user.id, session.user.email)
           useAuthStore.setState({ user, profile, loading: false, initialized: true })
         } catch {
-          useAuthStore.setState({ loading: false, initialized: true })
+          // On error, keep existing user if any, just mark as initialized
+          const currentState = useAuthStore.getState()
+          if (currentState.user) {
+            useAuthStore.setState({ loading: false, initialized: true })
+          } else {
+            useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
+          }
         }
       } else {
         useAuthStore.setState({ user: null, profile: null, loading: false, initialized: true })
@@ -167,10 +173,23 @@ export const useAuthStore = create<AuthState>()(
             )
             set({ user, profile, loading: false, initialized: true })
           } else {
-            set({ user: null, profile: null, loading: false, initialized: true })
+            // No session in Supabase, but we might have a persisted user from localStorage
+            // Don't clear it yet - let the auth listener handle it
+            const currentUser = get().user
+            if (currentUser) {
+              set({ loading: false, initialized: true })
+            } else {
+              set({ user: null, profile: null, loading: false, initialized: true })
+            }
           }
         } catch {
-          set({ user: null, profile: null, loading: false, initialized: true })
+          // Timeout or error: keep persisted user if exists, don't clear it
+          const currentUser = get().user
+          if (currentUser) {
+            set({ loading: false, initialized: true })
+          } else {
+            set({ user: null, profile: null, loading: false, initialized: true })
+          }
         }
       },
       login: async (email, password) => {
