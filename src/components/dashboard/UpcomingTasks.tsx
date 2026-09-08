@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Calendar, Loader2, AlertTriangle } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { useAuthStore } from '../../store/authStore'
 import { activitiesService } from '../../services/activities.service'
 import type { Activity } from '../../types'
+import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
 
 interface Task {
   id: string
@@ -26,46 +27,52 @@ export const UpcomingTasks = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetchTasks = useCallback(async () => {
     if (!user?.id) {
       setLoading(false)
       return
     }
 
-    const fetchTasks = async () => {
-      try {
-        setLoading(true)
-        const activities = await activitiesService.getUpcomingTasks(5)
+    try {
+      setLoading(true)
+      setError(null)
+      const activities = await withTimeout<Activity[]>(
+        activitiesService.getUpcomingTasks(5),
+        DATA_FETCH_TIMEOUT_MS
+      )
 
-        const taskList: Task[] = activities.map((activity) => {
-          const raw = activity as Activity & {
-            priority?: 'high' | 'medium' | 'low' | null
-            status?: 'pending' | 'completed' | null
-          }
-          return {
-            id: activity.id,
-            title: activity.title,
-            dueDate: raw.due_date
-              ? new Date(raw.due_date).toLocaleDateString('es-ES', {
-                  day: 'numeric',
-                  month: 'short'
-                })
-              : 'Sin fecha',
-            priority: raw.priority ?? 'medium',
-            status: raw.status ?? 'pending'
-          }
-        })
+      const taskList: Task[] = activities.map((activity) => {
+        const raw = activity as Activity & {
+          priority?: 'high' | 'medium' | 'low' | null
+          status?: 'pending' | 'completed' | null
+        }
+        return {
+          id: activity.id,
+          title: activity.title,
+          dueDate: raw.due_date
+            ? new Date(raw.due_date).toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'short'
+              })
+            : 'Sin fecha',
+          priority: raw.priority ?? 'medium',
+          status: raw.status ?? 'pending'
+        }
+      })
 
-        setTasks(taskList)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error al cargar tareas próximas')
-      } finally {
-        setLoading(false)
-      }
+      setTasks(taskList)
+    } catch (err) {
+      setError(err instanceof Error && err.message === 'timeout'
+        ? 'Tiempo de espera agotado al cargar tareas'
+        : err instanceof Error ? err.message : 'Error al cargar tareas próximas')
+    } finally {
+      setLoading(false)
     }
-
-    fetchTasks()
   }, [user?.id])
+
+  useEffect(() => {
+    fetchTasks()
+  }, [fetchTasks])
 
   if (loading) {
     return (
@@ -86,6 +93,12 @@ export const UpcomingTasks = () => {
           <div>
             <h3 className="font-bold">Error al cargar tareas</h3>
             <p className="mt-1">{error}</p>
+            <button
+              onClick={fetchTasks}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Reintentar
+            </button>
           </div>
         </div>
       </Card>

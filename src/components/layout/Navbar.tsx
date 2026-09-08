@@ -58,10 +58,11 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
         <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate('/')}
-            className="hidden sm:flex items-center gap-2 p-2 text-navy-600 hover:text-navy-900 hover:bg-navy-100 rounded-lg transition-colors"
+            className="flex items-center gap-2 p-2 text-navy-600 hover:text-navy-900 hover:bg-navy-100 rounded-lg transition-colors"
+            aria-label="Ir al sitio público"
           >
             <Home size={20} />
-            Inicio
+            <span className="hidden sm:inline font-medium">Inicio</span>
           </button>
 
           <div className="relative">

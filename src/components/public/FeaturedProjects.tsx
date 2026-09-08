@@ -1,26 +1,37 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { publicService } from '../../services/public.service'
 import type { Project } from '../../types'
+import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
+import { AlertTriangle } from 'lucide-react'
 
 export const FeaturedProjects = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadProjects = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await withTimeout<Project[]>(
+        publicService.getFeaturedProjects(),
+        DATA_FETCH_TIMEOUT_MS
+      )
+      setProjects(data)
+    } catch (err) {
+      console.error('Error loading featured projects:', err)
+      setError(err instanceof Error && err.message === 'timeout'
+        ? 'Tiempo de espera agotado al cargar proyectos'
+        : err instanceof Error ? err.message : 'Error al cargar proyectos')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const data = await publicService.getFeaturedProjects()
-        setProjects(data)
-      } catch (err) {
-        console.error('Error loading featured projects:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadProjects()
-  }, [])
+  }, [loadProjects])
 
   if (loading) return (
     <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -34,6 +45,26 @@ export const FeaturedProjects = () => {
           </div>
         </div>
       ))}
+    </div>
+  )
+
+  if (error) return (
+    <div className="text-center py-12">
+      <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 inline-block text-left" role="alert">
+        <div className="flex items-center">
+          <AlertTriangle size={20} className="mr-3 flex-shrink-0" />
+          <div>
+            <h3 className="font-bold">Error al cargar proyectos</h3>
+            <p className="mt-1">{error}</p>
+            <button
+              onClick={loadProjects}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 

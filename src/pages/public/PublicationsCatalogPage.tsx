@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { PublicLayout } from '../../components/layout/PublicLayout'
 import { publicService } from '../../services/public.service'
 import { PublicPublicationCard } from '../../components/public/PublicPublicationCard'
 import { Input } from '../../components/ui/Input'
-import { Search } from 'lucide-react'
+import { Search, AlertTriangle } from 'lucide-react'
 import type { Publication } from '../../types'
+import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
 
 export const PublicationsCatalogPage = () => {
   const [publications, setPublications] = useState<Publication[]>([])
@@ -12,22 +13,27 @@ export const PublicationsCatalogPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    const loadPublications = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await publicService.getPublishedPublications()
-        setPublications(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando publicaciones')
-      } finally {
-        setLoading(false)
-      }
+  const loadPublications = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await withTimeout<Publication[]>(
+        publicService.getPublishedPublications(),
+        DATA_FETCH_TIMEOUT_MS
+      )
+      setPublications(data)
+    } catch (err) {
+      setError(err instanceof Error && err.message === 'timeout'
+        ? 'Tiempo de espera agotado al cargar publicaciones'
+        : err instanceof Error ? err.message : 'Error cargando publicaciones')
+    } finally {
+      setLoading(false)
     }
-
-    loadPublications()
   }, [])
+
+  useEffect(() => {
+    loadPublications()
+  }, [loadPublications])
 
   const filtered = searchTerm.trim()
     ? publications.filter((p) =>
@@ -70,8 +76,17 @@ export const PublicationsCatalogPage = () => {
         )}
 
         {error && !loading && (
-          <div className="p-6 text-red-600 bg-red-50 rounded-lg">
-            {error}
+          <div className="p-6 text-red-600 bg-red-50 rounded-lg flex items-center justify-between">
+            <AlertTriangle size={20} className="mr-3 flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              {error}
+              <button
+                onClick={loadPublications}
+                className="ml-4 text-sm text-blue-600 hover:text-blue-800 underline whitespace-nowrap"
+              >
+                Reintentar
+              </button>
+            </div>
           </div>
         )}
 

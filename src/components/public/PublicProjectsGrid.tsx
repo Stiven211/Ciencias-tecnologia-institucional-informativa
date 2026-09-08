@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { PublicProjectCard } from './PublicProjectCard'
 import { publicService } from '../../services/public.service'
 import type { Project } from '../../types'
+import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
+import { AlertTriangle } from 'lucide-react'
 
 interface PublicProjectsGridProps {
   filters: {
@@ -16,23 +18,28 @@ export const PublicProjectsGrid = ({ filters }: PublicProjectsGridProps) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const loadProjects = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await publicService.getPublicProjects(filters)
-        setProjects(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando proyectos')
-        console.error('Error loading projects:', err)
-      } finally {
-        setLoading(false)
-      }
+  const loadProjects = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await withTimeout<Project[]>(
+        publicService.getPublicProjects(filters),
+        DATA_FETCH_TIMEOUT_MS
+      )
+      setProjects(data)
+    } catch (err) {
+      setError(err instanceof Error && err.message === 'timeout'
+        ? 'Tiempo de espera agotado al cargar proyectos'
+        : err instanceof Error ? err.message : 'Error cargando proyectos')
+      console.error('Error loading projects:', err)
+    } finally {
+      setLoading(false)
     }
-
-    loadProjects()
   }, [filters])
+
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
 
   if (loading) return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -51,7 +58,18 @@ export const PublicProjectsGrid = ({ filters }: PublicProjectsGridProps) => {
 
   if (error) return (
     <div className="p-6 text-red-600 bg-red-50 rounded-lg">
-      {error}
+      <div className="flex items-center justify-between">
+        <AlertTriangle size={20} className="mr-3 flex-shrink-0" />
+        <div className="flex items-center gap-2">
+          {error}
+          <button
+            onClick={loadProjects}
+            className="ml-4 text-sm text-blue-600 hover:text-blue-800 underline whitespace-nowrap"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
     </div>
   )
 
