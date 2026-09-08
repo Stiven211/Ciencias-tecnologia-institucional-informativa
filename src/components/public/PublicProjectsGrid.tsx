@@ -57,7 +57,13 @@ export const PublicProjectsGrid = ({ filters }: PublicProjectsGridProps) => {
 
   if (projects.length === 0) return (
     <div className="text-center py-12">
-      <p className="text-navy-500">No se encontraron proyectos con los filtros aplicados</p>
+      {filters.technologies.length > 0 ? (
+        <p className="text-navy-500">
+          No se encontraron proyectos para <strong>{filters.technologies.join(', ')}</strong>
+        </p>
+      ) : (
+        <p className="text-navy-500">No se encontraron proyectos con los filtros aplicados</p>
+      )}
     </div>
   )
 

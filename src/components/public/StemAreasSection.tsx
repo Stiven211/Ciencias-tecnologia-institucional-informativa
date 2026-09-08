@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { FlaskRound, Atom, Cpu, Sprout, Bot, Calculator } from 'lucide-react'
 
 const stemAreas = [
@@ -24,17 +25,18 @@ export const StemAreasSection = () => {
           {stemAreas.map((area) => {
             const Icon = area.icon
             return (
-              <div 
-                key={area.name} 
+              <Link
+                key={area.name}
+                to={`/projects?technology=${encodeURIComponent(area.name)}`}
                 className="flex flex-col items-center justify-center p-6 bg-white rounded-xl border border-navy-200 hover:shadow-md transition-all duration-200 cursor-pointer text-center"
               >
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 ${area.color}`}>
                   <Icon size={24} />
                 </div>
-                <span className="text-sm font-medium text-navy-700 block w-full">
-                  {area.name}
-                </span>
-              </div>
+                 <span className="text-sm font-medium text-navy-700 block w-full">
+                   {area.name}
+                 </span>
+               </Link>
             )
           })}
         </div>

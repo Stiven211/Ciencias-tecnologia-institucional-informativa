@@ -1,13 +1,17 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ProjectsFilters } from '../../components/public/ProjectsFilters'
 import { PublicProjectsGrid } from '../../components/public/PublicProjectsGrid'
 import { PublicLayout } from '../../components/layout/PublicLayout'
 
 export const ProjectsCatalogPage = () => {
+  const [searchParams] = useSearchParams()
+  const urlTechnology = searchParams.get('technology')
+
   const [filters, setFilters] = useState<{ search: string; technologies: string[]; categories: string[] }>({
     search: '',
-    technologies: [],
-    categories: []
+    technologies: urlTechnology ? [urlTechnology] : [],
+    categories: [],
   })
 
   return (
@@ -24,7 +28,10 @@ export const ProjectsCatalogPage = () => {
         
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
-            <ProjectsFilters onFiltersChange={setFilters} />
+            <ProjectsFilters
+              onFiltersChange={setFilters}
+              initialFilters={{ technologies: urlTechnology ? [urlTechnology] : [] }}
+            />
           </div>
           <div className="lg:col-span-2">
             <PublicProjectsGrid filters={filters} />
@@ -34,3 +41,4 @@ export const ProjectsCatalogPage = () => {
     </PublicLayout>
   )
 }
+export default ProjectsCatalogPage

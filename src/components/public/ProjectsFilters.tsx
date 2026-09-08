@@ -4,12 +4,13 @@ import { STEM_CATEGORIES } from '../../config/stemCategories'
 
 interface ProjectsFiltersProps {
   onFiltersChange: (filters: { search: string; technologies: string[]; categories: string[] }) => void
+  initialFilters?: { search?: string; technologies?: string[]; categories?: string[] }
 }
 
-export const ProjectsFilters = ({ onFiltersChange }: ProjectsFiltersProps) => {
-  const [search, setSearch] = useState('')
-  const [technologies, setTechnologies] = useState<string[]>([])
-  const [categories, setCategories] = useState<string[]>([])
+export const ProjectsFilters = ({ onFiltersChange, initialFilters }: ProjectsFiltersProps) => {
+  const [search, setSearch] = useState(initialFilters?.search ?? '')
+  const [technologies, setTechnologies] = useState<string[]>(initialFilters?.technologies ?? [])
+  const [categories, setCategories] = useState<string[]>(initialFilters?.categories ?? [])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value)
