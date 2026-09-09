@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuthStore } from '../store/authStore'
 import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../utils/fetchTimeout'
 
+const SESSION_CHECK_TIMEOUT_MS = 8000
+
 interface DashboardStats {
   projects: number
   resources: number
@@ -30,6 +32,18 @@ export const useDashboardStats = () => {
     try {
       setLoading(true)
       setError(null)
+
+      // Verificar que hay sesión válida en Supabase antes de hacer queries
+      const session = await withTimeout(
+        async () => (await supabase.auth.getSession()).data.session,
+        SESSION_CHECK_TIMEOUT_MS
+      )
+
+      if (!session) {
+        setError('Sesión no disponible. Vuelve a iniciar sesión.')
+        setLoading(false)
+        return
+      }
 
       const [
         projectsCount,

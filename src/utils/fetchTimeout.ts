@@ -1,4 +1,4 @@
-export const DATA_FETCH_TIMEOUT_MS = 15000
+export const DATA_FETCH_TIMEOUT_MS = 25000
 
 export function withTimeout<T>(promiseOrFactory: Promise<T> | (() => Promise<T>), ms = DATA_FETCH_TIMEOUT_MS): Promise<T> {
   let timer: ReturnType<typeof setTimeout>
