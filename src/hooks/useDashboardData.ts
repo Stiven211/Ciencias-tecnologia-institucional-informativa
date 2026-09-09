@@ -33,8 +33,8 @@ export const useDashboardData = () => {
         publicationsResult
       ] = await Promise.all([
         withTimeout(
-          () => Promise.resolve(
-            supabase
+          async () => {
+            return await supabase
               .from('projects')
               .select(`
                 *,
@@ -43,12 +43,12 @@ export const useDashboardData = () => {
               .eq('professor_id', user.id)
               .order('created_at', { ascending: false })
               .limit(5)
-          ),
+          },
           DATA_FETCH_TIMEOUT_MS
         ),
         withTimeout(
-          () => Promise.resolve(
-            supabase
+          async () => {
+            return await supabase
               .from('resources')
               .select(`
                 *,
@@ -57,12 +57,12 @@ export const useDashboardData = () => {
               .eq('professor_id', user.id)
               .order('created_at', { ascending: false })
               .limit(5)
-          ),
+          },
           DATA_FETCH_TIMEOUT_MS
         ),
         withTimeout(
-          () => Promise.resolve(
-            supabase
+          async () => {
+            return await supabase
               .from('publications')
               .select(`
                 *,
@@ -71,7 +71,7 @@ export const useDashboardData = () => {
               .eq('professor_id', user.id)
               .order('created_at', { ascending: false })
               .limit(5)
-          ),
+          },
           DATA_FETCH_TIMEOUT_MS
         )
       ])

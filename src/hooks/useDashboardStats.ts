@@ -37,31 +37,31 @@ export const useDashboardStats = () => {
         profilesCount
       ] = await Promise.all([
         withTimeout(
-          () => Promise.resolve(
-            supabase
+          async () => {
+            return await supabase
               .from('projects')
-              .select('id', { count: 'exact' })
+              .select('id', { count: 'exact', head: true })
               .eq('professor_id', user.id)
-          ),
+          },
           DATA_FETCH_TIMEOUT_MS
         ),
         withTimeout(
-          () => Promise.resolve(
-            supabase
+          async () => {
+            return await supabase
               .from('resources')
-              .select('id', { count: 'exact' })
+              .select('id', { count: 'exact', head: true })
               .eq('professor_id', user.id)
-          ),
+          },
           DATA_FETCH_TIMEOUT_MS
         ),
         withTimeout(
-          () => Promise.resolve(
-            supabase
+          async () => {
+            return await supabase
               .from('profiles')
-              .select('id', { count: 'exact' })
+              .select('id', { count: 'exact', head: true })
               .eq('role', 'teacher')
               .neq('id', user.id)
-          ),
+          },
           DATA_FETCH_TIMEOUT_MS
         )
       ])
