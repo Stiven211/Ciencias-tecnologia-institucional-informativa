@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuthStore } from '../store/authStore'
 import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../utils/fetchTimeout'
 
-const SESSION_CHECK_TIMEOUT_MS = 8000
+const SESSION_CHECK_TIMEOUT_MS = 5000
 
 interface DashboardStats {
   projects: number
@@ -12,7 +12,7 @@ interface DashboardStats {
 }
 
 export const useDashboardStats = () => {
-  const { user } = useAuthStore()
+  const { user, initialized } = useAuthStore()
 
   const [stats, setStats] = useState<DashboardStats>({
     projects: 0,
@@ -22,28 +22,44 @@ export const useDashboardStats = () => {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const fetchStats = useCallback(async () => {
+    if (!initialized) {
+      return
+    }
+
     if (!user?.id) {
       setLoading(false)
       return
     }
 
+    abortRef.current = new AbortController()
+    const signal = abortRef.current.signal
+
     try {
       setLoading(true)
       setError(null)
 
-      // Verificar que hay sesión válida en Supabase antes de hacer queries
-      const session = await withTimeout(
-        async () => (await supabase.auth.getSession()).data.session,
-        SESSION_CHECK_TIMEOUT_MS
-      )
+      let session: unknown = null
+      try {
+        session = await withTimeout(
+          async () => (await supabase.auth.getSession()).data.session,
+          SESSION_CHECK_TIMEOUT_MS
+        )
+      } catch {
+        console.warn('getSession timeout, continuing with queries (auth initialized + user present)')
+      }
 
-      if (!session) {
+      if (signal.aborted) return
+
+      if (!session && !user) {
         setError('Sesión no disponible. Vuelve a iniciar sesión.')
         setLoading(false)
         return
       }
+
+      if (signal.aborted) return
 
       const [
         projectsCount,
@@ -56,6 +72,7 @@ export const useDashboardStats = () => {
               .from('projects')
               .select('id', { count: 'exact', head: true })
               .eq('professor_id', user.id)
+              .abortSignal(signal)
           },
           DATA_FETCH_TIMEOUT_MS
         ),
@@ -65,6 +82,7 @@ export const useDashboardStats = () => {
               .from('resources')
               .select('id', { count: 'exact', head: true })
               .eq('professor_id', user.id)
+              .abortSignal(signal)
           },
           DATA_FETCH_TIMEOUT_MS
         ),
@@ -75,10 +93,13 @@ export const useDashboardStats = () => {
               .select('id', { count: 'exact', head: true })
               .eq('role', 'teacher')
               .neq('id', user.id)
+              .abortSignal(signal)
           },
           DATA_FETCH_TIMEOUT_MS
         )
       ])
+
+      if (signal.aborted) return
 
       if (projectsCount.error) throw projectsCount.error
       if (resourcesCount.error) throw resourcesCount.error
@@ -90,18 +111,27 @@ export const useDashboardStats = () => {
         collaborators: profilesCount.count ?? 0,
       })
     } catch (err) {
+      if (signal.aborted) return
       console.error('Error fetching dashboard stats:', err)
       setError(err instanceof Error && err.message === 'timeout'
         ? 'Tiempo de espera agotado al cargar estadísticas'
         : err instanceof Error ? err.message : 'Error al cargar estadísticas')
     } finally {
-      setLoading(false)
+      if (!signal.aborted) {
+        setLoading(false)
+      }
     }
-  }, [user?.id])
+  }, [user?.id, initialized])
 
   useEffect(() => {
+    if (!initialized) return
     fetchStats()
-  }, [fetchStats])
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort()
+      }
+    }
+  }, [initialized, user?.id, fetchStats])
 
   return { stats, loading, error, refetch: fetchStats }
 }
