@@ -6,8 +6,8 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { useDashboardData } from '../../hooks/useDashboardData'
 
 export const DashboardHome = () => {
-  const { stats, loading: statsLoading, error: statsError } = useDashboardStats()
-  const { data, loading: dataLoading, error: dataError } = useDashboardData()
+  const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useDashboardStats()
+  const { data, loading: dataLoading, error: dataError, refetch: refetchData } = useDashboardData()
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -50,6 +50,15 @@ export const DashboardHome = () => {
             <p className="mt-1">
               {(statsError || dataError) ?? 'Ocurrió un error inesperado'}
             </p>
+            <button
+              onClick={() => {
+                refetchStats()
+                refetchData()
+              }}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Reintentar
+            </button>
           </div>
         </div>
         <DashboardStatsGrid stats={stats} />

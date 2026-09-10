@@ -8,6 +8,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    // Evita deadlock conocido del LockManager interno de supabase-js (navigator.locks)
+    // en algunos navegadores, que bloquea auth.getSession() y las queries de datos.
     lock: async <R,>(_key: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => {
       return await fn()
     },
