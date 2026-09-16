@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '../lib/supabaseClient'
 import { useAuthStore } from '../store/authStore'
-import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../utils/fetchTimeout'
+import { restCount } from '../utils/supabaseRest'
 
 interface DashboardStats {
   projects: number
@@ -38,58 +37,46 @@ export const useDashboardStats = () => {
       setLoading(true)
       setError(null)
 
-      const [
-        projectsCount,
-        resourcesCount,
-        profilesCount
-      ] = await Promise.all([
-        withTimeout(
-          async () => {
-            return await supabase
-              .from('projects')
-              .select('id', { count: 'exact', head: true })
-              .eq('professor_id', user.id)
-          },
-          DATA_FETCH_TIMEOUT_MS
-        ),
-        withTimeout(
-          async () => {
-            return await supabase
-              .from('resources')
-              .select('id', { count: 'exact', head: true })
-              .eq('professor_id', user.id)
-          },
-          DATA_FETCH_TIMEOUT_MS
-        ),
-        withTimeout(
-          async () => {
-            return await supabase
-              .from('profiles')
-              .select('id', { count: 'exact', head: true })
-              .eq('role', 'teacher')
-              .neq('id', user.id)
-          },
-          DATA_FETCH_TIMEOUT_MS
-        )
+      const results = await Promise.allSettled([
+        restCount('projects', { professor_id: `eq.${user.id}` }),
+        restCount('resources', { professor_id: `eq.${user.id}` }),
+        restCount('profiles', { role: 'eq.teacher', id: `neq.${user.id}` }),
       ])
 
       if (requestId !== requestIdRef.current) return
 
-      if (projectsCount.error) throw projectsCount.error
-      if (resourcesCount.error) throw resourcesCount.error
-      if (profilesCount.error) throw profilesCount.error
+      const projectsResult = results[0]
+      const resourcesResult = results[1]
+      const profilesResult = results[2]
+
+      const projectsCount = projectsResult.status === 'fulfilled' ? projectsResult.value : 0
+      const resourcesCount = resourcesResult.status === 'fulfilled' ? resourcesResult.value : 0
+      const collaboratorsCount = profilesResult.status === 'fulfilled' ? profilesResult.value : 0
+
+      const hasRejectedRequest = results.some((result) => result.status === 'rejected')
 
       setStats({
-        projects: projectsCount.count ?? 0,
-        resources: resourcesCount.count ?? 0,
-        collaborators: profilesCount.count ?? 0,
+        projects: projectsCount,
+        resources: resourcesCount,
+        collaborators: collaboratorsCount,
       })
+
+      if (hasRejectedRequest) {
+        setError('Algunas estadísticas no están disponibles temporalmente')
+      }
     } catch (err) {
       if (requestId !== requestIdRef.current) return
-      console.error('Error fetching dashboard stats:', err)
-      setError(err instanceof Error && err.message === 'timeout'
-        ? 'Tiempo de espera agotado al cargar estadísticas'
-        : err instanceof Error ? err.message : 'Error al cargar estadísticas')
+
+      console.warn('Dashboard stats fetch issue:', err)
+
+      const message = err instanceof Error ? err.message : 'Error al cargar estadísticas'
+      setError(message)
+
+      setStats({
+        projects: 0,
+        resources: 0,
+        collaborators: 0,
+      })
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false)

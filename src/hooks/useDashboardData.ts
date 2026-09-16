@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '../lib/supabaseClient'
 import type { Project, Resource, Publication } from '../types'
 import { useAuthStore } from '../store/authStore'
-import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../utils/fetchTimeout'
+import { restSelect } from '../utils/supabaseRest'
 
 interface DashboardData {
   recentProjects: Project[]
@@ -34,72 +33,57 @@ export const useDashboardData = () => {
       setLoading(true)
       setError(null)
 
-      const [
-        projectsResult,
-        resourcesResult,
-        publicationsResult
-      ] = await Promise.all([
-        withTimeout(
-          async () => {
-            return await supabase
-              .from('projects')
-              .select(`
-                *,
-                professor:profiles(full_name, avatar_url)
-              `)
-              .eq('professor_id', user.id)
-              .order('created_at', { ascending: false })
-              .limit(5)
-          },
-          DATA_FETCH_TIMEOUT_MS
+      const professorSelect = 'professor:profiles(full_name,avatar_url)'
+
+      const results = await Promise.allSettled([
+        restSelect<Project>(
+          'projects',
+          `select=*,${professorSelect}&professor_id=eq.${user.id}&order=created_at.desc&limit=5`
         ),
-        withTimeout(
-          async () => {
-            return await supabase
-              .from('resources')
-              .select(`
-                *,
-                professor:profiles(full_name, avatar_url)
-              `)
-              .eq('professor_id', user.id)
-              .order('created_at', { ascending: false })
-              .limit(5)
-          },
-          DATA_FETCH_TIMEOUT_MS
+        restSelect<Resource>(
+          'resources',
+          `select=*,${professorSelect}&professor_id=eq.${user.id}&order=created_at.desc&limit=5`
         ),
-        withTimeout(
-          async () => {
-            return await supabase
-              .from('publications')
-              .select(`
-                *,
-                professor:profiles(full_name, avatar_url)
-              `)
-              .eq('professor_id', user.id)
-              .order('created_at', { ascending: false })
-              .limit(5)
-          },
-          DATA_FETCH_TIMEOUT_MS
-        )
+        restSelect<Publication>(
+          'publications',
+          `select=*,${professorSelect}&professor_id=eq.${user.id}&order=created_at.desc&limit=5`
+        ),
       ])
 
       if (requestId !== requestIdRef.current) return
 
-      if (projectsResult.error) throw projectsResult.error
-      if (resourcesResult.error) throw resourcesResult.error
-      if (publicationsResult.error) throw publicationsResult.error
+      const projectsResult = results[0]
+      const resourcesResult = results[1]
+      const publicationsResult = results[2]
+
+      const projectsData = projectsResult.status === 'fulfilled' ? projectsResult.value : []
+      const resourcesData = resourcesResult.status === 'fulfilled' ? resourcesResult.value : []
+      const publicationsData = publicationsResult.status === 'fulfilled' ? publicationsResult.value : []
+
+      const hasRejectedRequest = results.some((result) => result.status === 'rejected')
 
       setData({
-        recentProjects: projectsResult.data,
-        recentResources: resourcesResult.data,
-        recentPublications: publicationsResult.data
+        recentProjects: projectsData,
+        recentResources: resourcesData,
+        recentPublications: publicationsData,
       })
+
+      if (hasRejectedRequest) {
+        setError('Algunos datos no están disponibles temporalmente')
+      }
     } catch (err) {
       if (requestId !== requestIdRef.current) return
-      console.error('Error fetching dashboard data:', err)
-      setError(err instanceof Error && err.message === 'timeout'
-        ? 'Tiempo de espera agotado al cargar datos'
-        : err instanceof Error ? err.message : 'Error al cargar datos del dashboard')
+
+      console.warn('Dashboard data fetch issue:', err)
+
+      const message = err instanceof Error ? err.message : 'Error al cargar datos del dashboard'
+      setError(message)
+
+      setData({
+        recentProjects: [],
+        recentResources: [],
+        recentPublications: [],
+      })
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false)
