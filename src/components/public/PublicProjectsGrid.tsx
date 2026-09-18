@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { PublicProjectCard } from './PublicProjectCard'
-import { publicService } from '../../services/public.service'
+import { restSelect } from '../../utils/supabaseRest'
 import type { Project } from '../../types'
-import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
 import { AlertTriangle } from 'lucide-react'
 
 interface PublicProjectsGridProps {
@@ -18,24 +17,45 @@ export const PublicProjectsGrid = ({ filters }: PublicProjectsGridProps) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const buildQueryString = useCallback(() => {
+    const parts = [
+      'select=*,professor:profiles(full_name,avatar_url)',
+      "status=eq.published",
+      'order=created_at.desc',
+    ]
+
+    if (filters.search) {
+      const term = filters.search.trim()
+      parts.push(`or=(title.ilike.%25${encodeURIComponent(term)}%25,description.ilike.%25${encodeURIComponent(term)}%25,technologies.cs.{${encodeURIComponent(term)}})`)
+    }
+
+    if (filters.technologies && filters.technologies.length > 0) {
+      const techs = filters.technologies.map(t => `"${t}"`).join(',')
+      parts.push(`technologies.cs.{${techs}}`)
+    }
+
+    if (filters.categories && filters.categories.length > 0) {
+      const cats = filters.categories.map(c => `"${c}"`).join(',')
+      parts.push(`categories.ov.{${cats}}`)
+    }
+
+    return parts.join('&')
+  }, [filters])
+
   const loadProjects = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await withTimeout<Project[]>(
-        publicService.getPublicProjects(filters),
-        DATA_FETCH_TIMEOUT_MS
-      )
+      const queryString = buildQueryString()
+      const data = await restSelect<Project>('projects', queryString, { mode: 'anon' })
       setProjects(data)
     } catch (err) {
-      setError(err instanceof Error && err.message === 'timeout'
-        ? 'Tiempo de espera agotado al cargar proyectos'
-        : err instanceof Error ? err.message : 'Error cargando proyectos')
+      setError(err instanceof Error ? err.message : 'Error cargando proyectos')
       console.error('Error loading projects:', err)
     } finally {
       setLoading(false)
     }
-  }, [filters])
+  }, [buildQueryString])
 
   useEffect(() => {
     loadProjects()

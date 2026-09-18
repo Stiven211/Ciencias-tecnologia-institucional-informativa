@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Shield, Users, FolderOpen, Search } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
-import { projectsService } from '../../services/projects.service'
+import { restSelect, restCount } from '../../utils/supabaseRest'
 import { profileService } from '../../services/profile.service'
 import { useAuthStore } from '../../store/authStore'
 import { LoadingSpinnerCentered } from '../../components/ui/LoadingSpinner'
@@ -20,35 +19,60 @@ export const AdminDashboardPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const requestIdRef = useRef(0)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        if (activeTab === 'professors') {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1)
+  const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+    setLoading(true)
 
-          if (!error && data) setProfessors(data)
-        } else if (activeTab === 'projects') {
-          const { data, error } = await supabase
-            .from('projects')
-            .select(`*, professor:profiles(full_name, email)`)
-            .order('created_at', { ascending: false })
-            .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1)
+    try {
+      if (activeTab === 'professors') {
+        const offset = (currentPage - 1) * itemsPerPage
+        const queryString = `select=*&order=created_at.desc&limit=${itemsPerPage}&offset=${offset}`
 
-          if (!error && data) setProjects(data)
+        const [dataResult, countResult] = await Promise.allSettled([
+          restSelect<Profile>('profiles', queryString),
+          restCount('profiles', {}),
+        ])
+
+        if (requestId !== requestIdRef.current) return
+
+        const data = dataResult.status === 'fulfilled' ? dataResult.value : []
+
+        if (dataResult.status === 'rejected' || countResult.status === 'rejected') {
+          console.warn('AdminDashboard: partial data load for professors')
         }
-      } finally {
+
+        setProfessors(data)
+      } else if (activeTab === 'projects') {
+        const offset = (currentPage - 1) * itemsPerPage
+        const queryString = `select=*,professor:profiles(full_name,email)&order=created_at.desc&limit=${itemsPerPage}&offset=${offset}`
+
+        const [dataResult, countResult] = await Promise.allSettled([
+          restSelect<Project>('projects', queryString),
+          restCount('projects', {}),
+        ])
+
+        if (requestId !== requestIdRef.current) return
+
+        const data = dataResult.status === 'fulfilled' ? dataResult.value : []
+
+        if (dataResult.status === 'rejected' || countResult.status === 'rejected') {
+          console.warn('AdminDashboard: partial data load for projects')
+        }
+
+        setProjects(data)
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
         setLoading(false)
       }
     }
+  }, [activeTab, currentPage])
 
+  useEffect(() => {
     fetchData()
-  }, [activeTab, currentPage, searchTerm])
+  }, [fetchData])
 
   const [roleError, setRoleError] = useState<string | null>(null)
 
@@ -60,7 +84,7 @@ export const AdminDashboardPage = () => {
         userId: user.id,
         isAdmin: user.role === 'admin',
       })
-      setProfessors(prev => prev.map(p => (p.id === id ? updated : p)))
+      setProfessors((prev) => prev.map((p) => (p.id === id ? updated : p)))
     } catch (err) {
       setRoleError(err instanceof Error ? err.message : 'Error al actualizar el rol')
     }
@@ -69,12 +93,14 @@ export const AdminDashboardPage = () => {
   const updateProjectStatus = async (id: string, status: 'draft' | 'published' | 'archived') => {
     if (!user?.id) return
     try {
+      // Note: updateProject still uses supabase client (create/edit not migrated)
+      const { projectsService } = await import('../../services/projects.service')
       await projectsService.updateProject(
         id,
         { status },
         { userId: user.id, isAdmin: user.role === 'admin' }
       )
-      setProjects(prev => prev.map(p => p.id === id ? { ...p, status } : p))
+      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
     } catch (err) {
       console.error('Error updating project status:', err)
     }
@@ -100,7 +126,7 @@ export const AdminDashboardPage = () => {
           {[
             { id: 'professors', label: 'Profesores', icon: Users },
             { id: 'projects', label: 'Proyectos', icon: FolderOpen },
-          ].map(tab => (
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as AdminTab)}
@@ -139,16 +165,16 @@ export const AdminDashboardPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-200">
-              {professors.map(p => (
+              {professors.map((p) => (
                 <tr key={p.id}>
                   <td className="px-6 py-4 text-sm font-medium text-navy-900">{p.full_name}</td>
                   <td className="px-6 py-4 text-sm text-navy-600">{p.email}</td>
                   <td className="px-6 py-4">
-<select
-                       value={p.role}
-                       onChange={(e) => updateProfessorRole(p.id, e.target.value as UserRole)}
-                       className="text-sm border border-navy-300 rounded px-2 py-1"
-                     >
+                    <select
+                      value={p.role}
+                      onChange={(e) => updateProfessorRole(p.id, e.target.value as UserRole)}
+                      className="text-sm border border-navy-300 rounded px-2 py-1"
+                    >
                       <option value="visitor">Visitante</option>
                       <option value="teacher">Profesor</option>
                       <option value="admin">Admin</option>
@@ -178,16 +204,16 @@ export const AdminDashboardPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-200">
-              {projects.map(p => (
+              {projects.map((p) => (
                 <tr key={p.id}>
                   <td className="px-6 py-4 text-sm font-medium text-navy-900">{p.title}</td>
                   <td className="px-6 py-4 text-sm text-navy-600">{p.professor?.full_name || 'N/A'}</td>
                   <td className="px-6 py-4">
-<select
-                       value={p.status}
-                       onChange={(e) => updateProjectStatus(p.id, e.target.value as 'draft' | 'published' | 'archived')}
-                       className="text-sm border border-navy-300 rounded px-2 py-1"
-                     >
+                    <select
+                      value={p.status}
+                      onChange={(e) => updateProjectStatus(p.id, e.target.value as 'draft' | 'published' | 'archived')}
+                      className="text-sm border border-navy-300 rounded px-2 py-1"
+                    >
                       <option value="draft">Borrador</option>
                       <option value="published">Publicado</option>
                       <option value="archived">Archivado</option>

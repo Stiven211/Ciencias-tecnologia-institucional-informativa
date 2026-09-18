@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { activitiesService } from '../services/activities.service'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuthStore } from '../store/authStore'
+import { restSelect, restCount } from '../utils/supabaseRest'
 import type { Activity } from '../types'
 
 interface UseActivitiesOptions {
@@ -29,41 +29,112 @@ export const useActivities = ({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const user = useAuthStore((state) => state.user)
+  const userId = explicitProfessorId ?? user?.id
+  const requestIdRef = useRef(0)
 
   const fetchActivities = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
+    if (viewAll && user?.role === 'admin') {
+      // Admin view all - no professor_id filter
+      const requestId = ++requestIdRef.current
 
-      let data: Activity[] = []
+      try {
+        setLoading(true)
+        setError(null)
 
-      if (viewAll && user?.role === 'admin') {
-        data = await activitiesService.getAllActivities()
-      } else {
-        const userId = explicitProfessorId ?? user?.id
-        if (userId) {
-          data = await activitiesService.getMyActivities(userId)
+        let queryString = `select=*,professor:profiles(full_name,avatar_url)&order=created_at.desc`
+
+        if (searchTerm.trim()) {
+          const term = searchTerm.trim()
+          queryString += `&or=(title.ilike.%25${encodeURIComponent(term)}%25,description.ilike.%25${encodeURIComponent(term)}%25)`
+        }
+
+        if (limit !== undefined && limit > 0) {
+          queryString += `&limit=${limit}`
+        }
+
+        const [dataResult, countResult] = await Promise.allSettled([
+          restSelect<Activity>('activities', queryString),
+          restCount('activities', {}),
+        ])
+
+        if (requestId !== requestIdRef.current) return
+
+        const activitiesData = dataResult.status === 'fulfilled' ? dataResult.value : []
+        const countData = countResult.status === 'fulfilled' ? countResult.value : 0
+
+        const hasRejectedRequest = dataResult.status === 'rejected' || countResult.status === 'rejected'
+
+        setActivities(activitiesData)
+        setTotalCount(countData)
+
+        if (hasRejectedRequest) {
+          setError('Algunos datos no están disponibles temporalmente')
+        }
+      } catch (err) {
+        if (requestId !== requestIdRef.current) return
+
+        const message = err instanceof Error ? err.message : 'Error al cargar actividades'
+        setError(message)
+        setActivities([])
+        setTotalCount(0)
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false)
         }
       }
+    } else if (userId) {
+      // User's own activities
+      const requestId = ++requestIdRef.current
 
-      if (searchTerm.trim()) {
-        const term = searchTerm.trim().toLowerCase()
-        data = data.filter(
-          (a) =>
-            a.title.toLowerCase().includes(term) ||
-            (a.description && a.description.toLowerCase().includes(term))
-        )
+      try {
+        setLoading(true)
+        setError(null)
+
+        let queryString = `select=*,professor:profiles(full_name,avatar_url)&professor_id=eq.${userId}&order=created_at.desc`
+
+        if (searchTerm.trim()) {
+          const term = searchTerm.trim()
+          queryString += `&or=(title.ilike.%25${encodeURIComponent(term)}%25,description.ilike.%25${encodeURIComponent(term)}%25)`
+        }
+
+        if (limit !== undefined && limit > 0) {
+          queryString += `&limit=${limit}`
+        }
+
+        const [dataResult, countResult] = await Promise.allSettled([
+          restSelect<Activity>('activities', queryString),
+          restCount('activities', { professor_id: `eq.${userId}` }),
+        ])
+
+        if (requestId !== requestIdRef.current) return
+
+        const activitiesData = dataResult.status === 'fulfilled' ? dataResult.value : []
+        const countData = countResult.status === 'fulfilled' ? countResult.value : 0
+
+        const hasRejectedRequest = dataResult.status === 'rejected' || countResult.status === 'rejected'
+
+        setActivities(activitiesData)
+        setTotalCount(countData)
+
+        if (hasRejectedRequest) {
+          setError('Algunos datos no están disponibles temporalmente')
+        }
+      } catch (err) {
+        if (requestId !== requestIdRef.current) return
+
+        const message = err instanceof Error ? err.message : 'Error al cargar actividades'
+        setError(message)
+        setActivities([])
+        setTotalCount(0)
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false)
+        }
       }
-
-      setActivities(data.slice(0, limit))
-      setTotalCount(data.length)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al cargar actividades'
-      setError(message)
-    } finally {
+    } else {
       setLoading(false)
     }
-  }, [user?.id, user?.role, limit, searchTerm, explicitProfessorId, viewAll])
+  }, [user?.id, user?.role, limit, searchTerm, explicitProfessorId, viewAll, userId])
 
   useEffect(() => {
     fetchActivities()

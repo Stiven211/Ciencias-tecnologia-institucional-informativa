@@ -11,7 +11,7 @@ export function PublicLayout({
   return (
     <>
       <PublicNavbar />
-      <main>{children}</main>
+      {children}
       <PublicFooter />
     </>
   )

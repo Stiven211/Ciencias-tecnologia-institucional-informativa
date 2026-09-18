@@ -16,21 +16,41 @@ function getSupabaseConfig(): SupabaseConfig {
   return { url: url.replace(/\/+$/, ''), anonKey }
 }
 
+type AuthMode = 'anon' | 'session'
+
 function getAccessTokenFromStorage(): string | null {
   if (typeof window === 'undefined') return null
 
+  const readFrom = (store: Storage): string | null => {
+    try {
+      const keys = Object.keys(store).filter(
+        (k) => k.startsWith('sb-') && k.endsWith('-auth-token')
+      )
+      if (keys.length === 0) return null
+
+      const latestKey = keys.sort().pop()
+      if (!latestKey) return null
+
+      const raw = store.getItem(latestKey)
+      if (!raw) return null
+
+      const parsed = JSON.parse(raw)
+      const token =
+        parsed?.access_token ??
+        parsed?.currentSession?.access_token ??
+        null
+
+      return typeof token === 'string' && token.length > 0 ? token : null
+    } catch {
+      return null
+    }
+  }
+
+  const fromSession = readFrom(window.sessionStorage)
+  if (fromSession) return fromSession
+
   try {
-    const keys = Object.keys(localStorage).filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
-    if (keys.length === 0) return null
-
-    const latestKey = keys.sort().pop()
-    if (!latestKey) return null
-
-    const raw = localStorage.getItem(latestKey)
-    if (!raw) return null
-
-    const parsed = JSON.parse(raw)
-    return parsed?.access_token ?? null
+    return readFrom(window.localStorage)
   } catch {
     return null
   }
@@ -59,16 +79,31 @@ function buildQueryString(filters: Record<string, string>): string {
   return params.toString()
 }
 
+interface RestOptions {
+  mode?: AuthMode
+  timeoutMs?: number
+}
+
+function buildHeaders(anonKey: string, mode: AuthMode, token: string | null): Record<string, string> {
+  const headers: Record<string, string> = { apikey: anonKey }
+  if (mode === 'session' && token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
+}
+
 export async function restCount(
   table: string,
   filters: Record<string, string>,
-  timeoutMs = REST_FETCH_TIMEOUT_MS
+  options: RestOptions = {}
 ): Promise<number> {
   const { url, anonKey } = getSupabaseConfig()
-  const token = getAccessTokenFromStorage()
+  const { mode = 'session', timeoutMs = REST_FETCH_TIMEOUT_MS } = options
+  const token = mode === 'session' ? getAccessTokenFromStorage() : null
 
-  if (!token) {
-    throw new Error('Sesión no disponible: no se encontró access_token en localStorage')
+  if (mode === 'session' && !token) {
+    console.warn('[supabaseRest] sin access_token en sessionStorage/localStorage')
+    throw new Error('Sesión no disponible: no se encontró access_token en sessionStorage ni localStorage')
   }
 
   const queryString = buildQueryString({ ...filters, select: 'id' })
@@ -79,8 +114,7 @@ export async function restCount(
     {
       method: 'HEAD',
       headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${token}`,
+        ...buildHeaders(anonKey, mode, token),
         Prefer: 'count=exact',
       },
     },
@@ -110,13 +144,15 @@ export async function restCount(
 export async function restSelect<T>(
   table: string,
   queryString: string,
-  timeoutMs = REST_FETCH_TIMEOUT_MS
+  options: RestOptions = {}
 ): Promise<T[]> {
   const { url, anonKey } = getSupabaseConfig()
-  const token = getAccessTokenFromStorage()
+  const { mode = 'session', timeoutMs = REST_FETCH_TIMEOUT_MS } = options
+  const token = mode === 'session' ? getAccessTokenFromStorage() : null
 
-  if (!token) {
-    throw new Error('Sesión no disponible: no se encontró access_token en localStorage')
+  if (mode === 'session' && !token) {
+    console.warn('[supabaseRest] sin access_token en sessionStorage/localStorage')
+    throw new Error('Sesión no disponible: no se encontró access_token en sessionStorage ni localStorage')
   }
 
   const requestUrl = `${url}/rest/v1/${table}?${queryString}`
@@ -126,8 +162,7 @@ export async function restSelect<T>(
     {
       method: 'GET',
       headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${token}`,
+        ...buildHeaders(anonKey, mode, token),
         Accept: 'application/json',
       },
     },

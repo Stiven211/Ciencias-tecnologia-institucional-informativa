@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { publicService } from '../../services/public.service'
+import { restSelect } from '../../utils/supabaseRest'
 import type { Project } from '../../types'
-import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
 import { AlertTriangle } from 'lucide-react'
 
 export const FeaturedProjects = () => {
@@ -14,16 +13,12 @@ export const FeaturedProjects = () => {
     try {
       setLoading(true)
       setError(null)
-      const data = await withTimeout<Project[]>(
-        publicService.getFeaturedProjects(),
-        DATA_FETCH_TIMEOUT_MS
-      )
+      const queryString = 'select=*,professor:profiles(id,full_name,avatar_url)&status=eq.published&order=created_at.desc&limit=6'
+      const data = await restSelect<Project>('projects', queryString, { mode: 'anon' })
       setProjects(data)
     } catch (err) {
       console.error('Error loading featured projects:', err)
-      setError(err instanceof Error && err.message === 'timeout'
-        ? 'Tiempo de espera agotado al cargar proyectos'
-        : err instanceof Error ? err.message : 'Error al cargar proyectos')
+      setError(err instanceof Error ? err.message : 'Error al cargar proyectos')
     } finally {
       setLoading(false)
     }

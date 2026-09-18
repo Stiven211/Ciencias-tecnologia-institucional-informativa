@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { PublicProjectCard } from './PublicProjectCard'
-import { publicService } from '../../services/public.service'
+import { restSelect } from '../../utils/supabaseRest'
 import type { Project } from '../../types'
 
 interface RelatedProjectsProps {
@@ -12,32 +12,31 @@ export const RelatedProjects = ({ project }: RelatedProjectsProps) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const loadRelatedProjects = async () => {
-      if (!project.technologies || project.technologies.length === 0) {
-        setRelatedProjects([])
-        setLoading(false)
-        return
-      }
-
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await publicService.getRelatedProjects(
-          project.id, 
-          project.technologies
-        )
-        setRelatedProjects(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando proyectos relacionados')
-        console.error('Error loading related projects:', err)
-      } finally {
-        setLoading(false)
-      }
+  const loadRelatedProjects = useCallback(async () => {
+    if (!project.technologies || project.technologies.length === 0) {
+      setRelatedProjects([])
+      setLoading(false)
+      return
     }
 
-    loadRelatedProjects()
+    setLoading(true)
+    setError(null)
+    try {
+      const techs = project.technologies.map(t => `"${t}"`).join(',')
+      const queryString = `select=*,professor:profiles(full_name,avatar_url)&status=eq.published&neq=id.${project.id}&technologies.cs.{${techs}}&order=created_at.desc&limit=3`
+      const data = await restSelect<Project>('projects', queryString, { mode: 'anon' })
+      setRelatedProjects(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cargando proyectos relacionados')
+      console.error('Error loading related projects:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [project])
+
+  useEffect(() => {
+    loadRelatedProjects()
+  }, [loadRelatedProjects])
 
   if (loading) return (
     <div className="space-y-4">

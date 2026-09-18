@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { PublicLayout } from '../../components/layout/PublicLayout'
-import { publicService } from '../../services/public.service'
+import { restSelect } from '../../utils/supabaseRest'
 import { PublicPublicationCard } from '../../components/public/PublicPublicationCard'
 import { Input } from '../../components/ui/Input'
 import { Search, AlertTriangle } from 'lucide-react'
 import type { Publication } from '../../types'
-import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
 
 export const PublicationsCatalogPage = () => {
   const [publications, setPublications] = useState<Publication[]>([])
@@ -17,15 +16,11 @@ export const PublicationsCatalogPage = () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await withTimeout<Publication[]>(
-        publicService.getPublishedPublications(),
-        DATA_FETCH_TIMEOUT_MS
-      )
+      const queryString = 'select=*,professor:profiles(id,full_name,avatar_url)&published=eq.true&order=created_at.desc'
+      const data = await restSelect<Publication>('publications', queryString, { mode: 'anon' })
       setPublications(data)
     } catch (err) {
-      setError(err instanceof Error && err.message === 'timeout'
-        ? 'Tiempo de espera agotado al cargar publicaciones'
-        : err instanceof Error ? err.message : 'Error cargando publicaciones')
+      setError(err instanceof Error ? err.message : 'Error cargando publicaciones')
     } finally {
       setLoading(false)
     }

@@ -7,7 +7,7 @@ import { useDashboardData } from '../../hooks/useDashboardData'
 
 export const DashboardHome = () => {
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useDashboardStats()
-  const { data, loading: dataLoading, error: dataError, refetch: refetchData } = useDashboardData()
+  const { data, error: dataError, refetch: refetchData } = useDashboardData()
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -25,56 +25,30 @@ export const DashboardHome = () => {
     })
   }
 
-  if (statsLoading || dataLoading) {
-    return (
-      <div className="space-y-6">
-        <DashboardWelcomeHeader greeting={getGreeting()} date={formatDate()} />
-        <DashboardStatsGrid loading />
-        <DashboardContentPanel 
-          recentProjects={[]} 
-          recentResources={[]} 
-          recentPublications={[]} 
-        />
-      </div>
-    )
-  }
-
-  if (statsError || dataError) {
-    return (
-      <div className="space-y-6">
-        <DashboardWelcomeHeader greeting={getGreeting()} date={formatDate()} />
-        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-          <AlertTriangle size={20} className="mr-3" />
-          <div>
-            <h3 className="font-bold">Error al cargar el dashboard</h3>
-            <p className="mt-1">
-              {(statsError || dataError) ?? 'Ocurrió un error inesperado'}
-            </p>
-            <button
-              onClick={() => {
-                refetchStats()
-                refetchData()
-              }}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
-            >
-              Reintentar
-            </button>
-          </div>
-        </div>
-        <DashboardStatsGrid stats={stats} />
-        <DashboardContentPanel 
-          recentProjects={data?.recentProjects ?? []} 
-          recentResources={data?.recentResources ?? []} 
-          recentPublications={data?.recentPublications ?? []} 
-        />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <DashboardWelcomeHeader greeting={getGreeting()} date={formatDate()} />
-      <DashboardStatsGrid stats={stats} />
+      {statsError || dataError ? (
+        <div className="bg-amber-50 border-l-4 border-amber-500 text-amber-800 p-4 mb-6" role="status">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0" />
+            <div>
+              <h3 className="font-bold">Datos parcialmente disponibles</h3>
+              <p className="mt-1">El dashboard está disponible; algunos datos aún no respondieron.</p>
+              <button
+                onClick={() => {
+                  refetchStats()
+                  refetchData()
+                }}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      <DashboardStatsGrid loading={statsLoading} stats={statsLoading ? undefined : stats} />
       <DashboardContentPanel 
         recentProjects={data?.recentProjects ?? []} 
         recentResources={data?.recentResources ?? []} 

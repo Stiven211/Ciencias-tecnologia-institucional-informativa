@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { projectsService } from '../services/projects.service'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuthStore } from '../store/authStore'
+import { restSelect, restCount } from '../utils/supabaseRest'
 import type { Project } from '../types'
 
 interface UseProjectsOptions {
@@ -30,33 +30,64 @@ export const useProjects = ({
   const [error, setError] = useState<string | null>(null)
   const user = useAuthStore((state) => state.user)
   const userId = explicitProfessorId ?? user?.id
+  const requestIdRef = useRef(0)
 
   const fetchProjects = useCallback(async () => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
+
+    const requestId = ++requestIdRef.current
+
     try {
       setLoading(true)
       setError(null)
 
-      const options: Parameters<typeof projectsService.getProjects>[0] = {
-        limit,
-        search: searchTerm.trim(),
-      }
-
-      if (userId) {
-        options.professorId = userId
-      }
+      let queryString = `select=*,professor:profiles(id,full_name,avatar_url)&professor_id=eq.${userId}&order=created_at.desc`
 
       if (filterStatus !== 'all') {
-        options.status = filterStatus
+        queryString += `&status=eq.${filterStatus}`
       }
 
-      const result = await projectsService.getProjects(options)
-      setProjects(result.data)
-      setTotalCount(result.count)
+      if (searchTerm.trim()) {
+        const term = searchTerm.trim()
+        queryString += `&or=(title.ilike.%25${encodeURIComponent(term)}%25,description.ilike.%25${encodeURIComponent(term)}%25)`
+      }
+
+      if (limit !== undefined && limit > 0) {
+        queryString += `&limit=${limit}`
+      }
+
+      const [dataResult, countResult] = await Promise.allSettled([
+        restSelect<Project>('projects', queryString),
+        restCount('projects', { professor_id: `eq.${userId}` }),
+      ])
+
+      if (requestId !== requestIdRef.current) return
+
+      const projectsData = dataResult.status === 'fulfilled' ? dataResult.value : []
+      const countData = countResult.status === 'fulfilled' ? countResult.value : 0
+
+      const hasRejectedRequest = dataResult.status === 'rejected' || countResult.status === 'rejected'
+
+      setProjects(projectsData)
+      setTotalCount(countData)
+
+      if (hasRejectedRequest) {
+        setError('Algunos datos no están disponibles temporalmente')
+      }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return
+
       const message = err instanceof Error ? err.message : 'Error al cargar proyectos'
       setError(message)
+      setProjects([])
+      setTotalCount(0)
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
   }, [userId, limit, searchTerm, filterStatus])
 

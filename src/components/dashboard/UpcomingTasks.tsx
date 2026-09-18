@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Calendar, Loader2, AlertTriangle } from 'lucide-react'
 import { Card } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { useAuthStore } from '../../store/authStore'
-import { activitiesService } from '../../services/activities.service'
+import { restSelect } from '../../utils/supabaseRest'
 import type { Activity } from '../../types'
-import { withTimeout, DATA_FETCH_TIMEOUT_MS } from '../../utils/fetchTimeout'
 
 interface Task {
   id: string
@@ -26,6 +25,7 @@ export const UpcomingTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const fetchTasks = useCallback(async () => {
     if (!user?.id) {
@@ -33,13 +33,18 @@ export const UpcomingTasks = () => {
       return
     }
 
+    const requestId = ++requestIdRef.current
+
     try {
       setLoading(true)
       setError(null)
-      const activities = await withTimeout<Activity[]>(
-        activitiesService.getUpcomingTasks(5),
-        DATA_FETCH_TIMEOUT_MS
-      )
+
+      const today = new Date().toISOString().split('T')[0]
+      const queryString = `select=*,professor:profiles(full_name,avatar_url)&professor_id=eq.${user.id}&due_date=gte.${today}&order=due_date.asc.nullsfirst&limit=5`
+
+      const activities = await restSelect<Activity>('activities', queryString)
+
+      if (requestId !== requestIdRef.current) return
 
       const taskList: Task[] = activities.map((activity) => {
         const raw = activity as Activity & {
@@ -52,21 +57,23 @@ export const UpcomingTasks = () => {
           dueDate: raw.due_date
             ? new Date(raw.due_date).toLocaleDateString('es-ES', {
                 day: 'numeric',
-                month: 'short'
+                month: 'short',
               })
             : 'Sin fecha',
           priority: raw.priority ?? 'medium',
-          status: raw.status ?? 'pending'
+          status: raw.status ?? 'pending',
         }
       })
 
       setTasks(taskList)
     } catch (err) {
-      setError(err instanceof Error && err.message === 'timeout'
-        ? 'Tiempo de espera agotado al cargar tareas'
-        : err instanceof Error ? err.message : 'Error al cargar tareas próximas')
+      if (requestId !== requestIdRef.current) return
+
+      setError(err instanceof Error ? err.message : 'Error al cargar tareas próximas')
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
   }, [user?.id])
 

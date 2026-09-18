@@ -1,9 +1,37 @@
 ﻿import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { User, Profile, Permission, UserRole } from '../types'
 import { supabase } from '../lib/supabaseClient'
 import { hasPermission as checkPermission, hasRole as checkRole, PERMISSIONS, isOwner as checkOwner } from '../config/permissions'
 import { authService } from '../services/auth.service'
+
+const createSafeSessionStorage = (): Storage => {
+  if (typeof window === 'undefined') {
+    return {
+      getItem: () => null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+      clear: () => undefined,
+      key: () => null,
+      length: 0,
+    }
+  }
+
+  try {
+    return window.sessionStorage
+  } catch {
+    return {
+      getItem: () => null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+      clear: () => undefined,
+      key: () => null,
+      length: 0,
+    }
+  }
+}
+
+const authStorage = createJSONStorage(() => createSafeSessionStorage())
 
 const INIT_TIMEOUT_MS = 20000
 
@@ -219,7 +247,8 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, profile: state.profile }),
+      storage: authStorage,
+      partialize: (state) => ({ user: state.user, profile: state.profile, initialized: state.initialized }),
     }
   )
 )
