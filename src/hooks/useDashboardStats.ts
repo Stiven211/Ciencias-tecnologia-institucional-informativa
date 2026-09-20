@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuthStore } from '../store/authStore'
-import { restCount } from '../utils/supabaseRest'
-
-interface DashboardStats {
-  projects: number
-  resources: number
-  collaborators: number
-}
+import { dashboardService, type DashboardStats } from '../services/dashboard.service'
 
 export const useDashboardStats = () => {
   const { user, initialized } = useAuthStore()
@@ -37,33 +31,11 @@ export const useDashboardStats = () => {
       setLoading(true)
       setError(null)
 
-      const results = await Promise.allSettled([
-        restCount('projects', { professor_id: `eq.${user.id}` }),
-        restCount('resources', { professor_id: `eq.${user.id}` }),
-        restCount('profiles', { role: 'eq.teacher', id: `neq.${user.id}` }),
-      ])
+      const data = await dashboardService.getDashboardStats(user.id)
 
       if (requestId !== requestIdRef.current) return
 
-      const projectsResult = results[0]
-      const resourcesResult = results[1]
-      const profilesResult = results[2]
-
-      const projectsCount = projectsResult.status === 'fulfilled' ? projectsResult.value : 0
-      const resourcesCount = resourcesResult.status === 'fulfilled' ? resourcesResult.value : 0
-      const collaboratorsCount = profilesResult.status === 'fulfilled' ? profilesResult.value : 0
-
-      const hasRejectedRequest = results.some((result) => result.status === 'rejected')
-
-      setStats({
-        projects: projectsCount,
-        resources: resourcesCount,
-        collaborators: collaboratorsCount,
-      })
-
-      if (hasRejectedRequest) {
-        setError('Algunas estadísticas no están disponibles temporalmente')
-      }
+      setStats(data)
     } catch (err) {
       if (requestId !== requestIdRef.current) return
 

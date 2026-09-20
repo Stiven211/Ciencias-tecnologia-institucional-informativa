@@ -196,4 +196,27 @@ export const resourcesService = {
 
     return publicUrl.publicUrl
   },
+
+  async getRecentResourcesForDashboard(professorId: string, limit = 5): Promise<Resource[]> {
+    const { data, error } = await supabase
+      .from('resources')
+      .select(`
+        *,
+        professor:profiles(full_name, avatar_url)
+      `)
+      .eq('professor_id', professorId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return (data ?? []) as Resource[]
+  },
+
+  async getResourcesCountForDashboard(professorId: string): Promise<number> {
+    const { count } = await supabase
+      .from('resources')
+      .select('id', { count: 'exact', head: true })
+      .eq('professor_id', professorId)
+    return count ?? 0
+  },
 }

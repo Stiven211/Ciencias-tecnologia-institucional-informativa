@@ -1,13 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Project, Resource, Publication } from '../types'
 import { useAuthStore } from '../store/authStore'
-import { restSelect } from '../utils/supabaseRest'
-
-interface DashboardData {
-  recentProjects: Project[]
-  recentResources: Resource[]
-  recentPublications: Publication[]
-}
+import { dashboardService, type DashboardData } from '../services/dashboard.service'
 
 export const useDashboardData = () => {
   const { user, initialized } = useAuthStore()
@@ -33,44 +26,11 @@ export const useDashboardData = () => {
       setLoading(true)
       setError(null)
 
-      const professorSelect = 'professor:profiles(full_name,avatar_url)'
-
-      const results = await Promise.allSettled([
-        restSelect<Project>(
-          'projects',
-          `select=*,${professorSelect}&professor_id=eq.${user.id}&order=created_at.desc&limit=5`
-        ),
-        restSelect<Resource>(
-          'resources',
-          `select=*,${professorSelect}&professor_id=eq.${user.id}&order=created_at.desc&limit=5`
-        ),
-        restSelect<Publication>(
-          'publications',
-          `select=*,${professorSelect}&professor_id=eq.${user.id}&order=created_at.desc&limit=5`
-        ),
-      ])
+      const dashboardData = await dashboardService.getDashboardData(user.id)
 
       if (requestId !== requestIdRef.current) return
 
-      const projectsResult = results[0]
-      const resourcesResult = results[1]
-      const publicationsResult = results[2]
-
-      const projectsData = projectsResult.status === 'fulfilled' ? projectsResult.value : []
-      const resourcesData = resourcesResult.status === 'fulfilled' ? resourcesResult.value : []
-      const publicationsData = publicationsResult.status === 'fulfilled' ? publicationsResult.value : []
-
-      const hasRejectedRequest = results.some((result) => result.status === 'rejected')
-
-      setData({
-        recentProjects: projectsData,
-        recentResources: resourcesData,
-        recentPublications: publicationsData,
-      })
-
-      if (hasRejectedRequest) {
-        setError('Algunos datos no están disponibles temporalmente')
-      }
+      setData(dashboardData)
     } catch (err) {
       if (requestId !== requestIdRef.current) return
 

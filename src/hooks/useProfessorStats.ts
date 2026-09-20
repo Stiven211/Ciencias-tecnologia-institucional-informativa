@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabaseClient'
 import { useAuthStore } from '../store/authStore'
+import { dashboardService, type ProfessorStats } from '../services/dashboard.service'
 
 export const useProfessorStats = () => {
   const { user } = useAuthStore()
-  
-  const [stats, setStats] = useState({
+
+  const [stats, setStats] = useState<ProfessorStats>({
     projects: 0,
     published: 0,
     drafts: 0,
     resources: 0,
     publications: 0,
-    activities: 0
+    activities: 0,
   })
-  
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,38 +22,15 @@ export const useProfessorStats = () => {
       setLoading(false)
       return
     }
-    
+
     const fetchStats = async () => {
       try {
         setLoading(true)
-        
-        const [
-          projectsResult,
-          publishedResult,
-          draftResult,
-          resourcesResult,
-          publicationsResult,
-          activitiesResult
-        ] = await Promise.all([
-          supabase.from('projects').select('id', { count: 'exact' }).eq('professor_id', user.id),
-          supabase.from('projects').select('id', { count: 'exact' }).eq('professor_id', user.id).eq('status', 'published'),
-          supabase.from('projects').select('id', { count: 'exact' }).eq('professor_id', user.id).eq('status', 'draft'),
-          supabase.from('resources').select('id', { count: 'exact' }).eq('professor_id', user.id),
-          supabase.from('publications').select('id', { count: 'exact' }).eq('professor_id', user.id),
-          supabase.from('activities').select('id', { count: 'exact' }).eq('professor_id', user.id),
-        ])
-        
-        const errors = [projectsResult, publishedResult, draftResult, resourcesResult, publicationsResult, activitiesResult].filter(r => r.error)
-        if (errors.length > 0) throw errors[0].error
-        
-        setStats({
-          projects: projectsResult.count ?? 0,
-          published: publishedResult.count ?? 0,
-          drafts: draftResult.count ?? 0,
-          resources: resourcesResult.count ?? 0,
-          publications: publicationsResult.count ?? 0,
-          activities: activitiesResult.count ?? 0
-        })
+        setError(null)
+
+        const data = await dashboardService.getProfessorStats(user.id)
+
+        setStats(data)
       } catch (err) {
         console.error('Error fetching professor stats:', err)
         setError(err instanceof Error ? err.message : 'Error al cargar estadísticas')
@@ -61,7 +38,7 @@ export const useProfessorStats = () => {
         setLoading(false)
       }
     }
-    
+
     fetchStats()
   }, [user?.id])
 

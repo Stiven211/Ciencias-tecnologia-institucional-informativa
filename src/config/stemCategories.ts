@@ -9,4 +9,6 @@ export const STEM_CATEGORIES = [
   'IA',
   'Matemáticas',
   'Física',
-]
+] as const;
+
+export type StemCategory = typeof STEM_CATEGORIES[number];

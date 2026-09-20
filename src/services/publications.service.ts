@@ -182,4 +182,27 @@ export const publicationsService = {
 
     return publicUrl.publicUrl
   },
+
+  async getRecentPublicationsForDashboard(professorId: string, limit = 5): Promise<Publication[]> {
+    const { data, error } = await supabase
+      .from('publications')
+      .select(`
+        *,
+        professor:profiles(full_name, avatar_url)
+      `)
+      .eq('professor_id', professorId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return (data ?? []) as Publication[]
+  },
+
+  async getPublicationsCountForDashboard(professorId: string): Promise<number> {
+    const { count } = await supabase
+      .from('publications')
+      .select('id', { count: 'exact', head: true })
+      .eq('professor_id', professorId)
+    return count ?? 0
+  },
 }

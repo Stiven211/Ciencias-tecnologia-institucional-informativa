@@ -186,5 +186,33 @@ export const projectsService = {
       .getPublicUrl(filePath)
 
     return publicUrl.publicUrl
-  }
+  },
+
+  async getRecentProjectsForDashboard(professorId: string, limit = 5): Promise<Project[]> {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        professor:profiles(id, full_name, avatar_url)
+      `)
+      .eq('professor_id', professorId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return (data ?? []) as Project[]
+  },
+
+  async getProjectCountsForDashboard(professorId: string): Promise<{ total: number; published: number; drafts: number }> {
+    const [{ count: total }, { count: published }, { count: drafts }] = await Promise.all([
+      supabase.from('projects').select('id', { count: 'exact', head: true }).eq('professor_id', professorId),
+      supabase.from('projects').select('id', { count: 'exact', head: true }).eq('professor_id', professorId).eq('status', 'published'),
+      supabase.from('projects').select('id', { count: 'exact', head: true }).eq('professor_id', professorId).eq('status', 'draft'),
+    ])
+    return {
+      total: total ?? 0,
+      published: published ?? 0,
+      drafts: drafts ?? 0,
+    }
+  },
 }

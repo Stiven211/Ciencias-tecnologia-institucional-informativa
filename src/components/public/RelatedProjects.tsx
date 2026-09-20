@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { PublicProjectCard } from './PublicProjectCard'
-import { restSelect } from '../../utils/supabaseRest'
+import { publicService } from '../../services/public.service'
 import type { Project } from '../../types'
 
 interface RelatedProjectsProps {
@@ -22,9 +22,7 @@ export const RelatedProjects = ({ project }: RelatedProjectsProps) => {
     setLoading(true)
     setError(null)
     try {
-      const techs = project.technologies.map(t => `"${t}"`).join(',')
-      const queryString = `select=*,professor:profiles(full_name,avatar_url)&status=eq.published&neq=id.${project.id}&technologies.cs.{${techs}}&order=created_at.desc&limit=3`
-      const data = await restSelect<Project>('projects', queryString, { mode: 'anon' })
+      const data = await publicService.getRelatedProjects(project.id, project.technologies, 3)
       setRelatedProjects(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error cargando proyectos relacionados')

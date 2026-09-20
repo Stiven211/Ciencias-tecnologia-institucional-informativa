@@ -131,5 +131,13 @@ export const activitiesService = {
       .eq('id', id)
 
     if (error) throw error
-  }
+  },
+
+  async getActivitiesCountForDashboard(professorId: string): Promise<number> {
+    const { count } = await supabase
+      .from('activities')
+      .select('id', { count: 'exact', head: true })
+      .eq('professor_id', professorId)
+    return count ?? 0
+  },
 }
