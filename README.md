@@ -1,60 +1,102 @@
-# NODO / CIENCIA
+# Área de Ciencias Naturales y Tecnología
 
-**NODO / CIENCIA** es el nuevo portal público del Área de Ciencias: una experiencia editorial para descubrir proyectos, documentar procesos de investigación y conectar a estudiantes, docentes y comunidades.
+Portal institucional del **Área de Ciencias Naturales y Tecnología** del Colegio José Celestino Mutis (San José del Guaviare, Colombia). Reúne proyectos académicos y científicos de docentes en Biología, Química, Física, Informática, Tecnología e Innovación, con sitio público y panel de gestión con roles.
 
-## Qué incluye
+**Demo:** https://ciencias-tecnologia-institucional-i.vercel.app
 
-La portada presenta una identidad visual propia, inspirada en cuadernos de laboratorio, diagramas de conexiones y señalética de archivo. La experiencia incluye un hero editorial, navegación responsive, catálogo de proyectos destacados, búsqueda local, filtros por disciplina, modal de detalle y llamadas a la acción hacia el catálogo, registro y método institucional.
+## Funcionalidades
 
-El diseño utiliza una composición asimétrica, fondo papel, tinta carbón y acentos ácido-lima, coral y violeta. Se incorporan estados de foco visibles, navegación por teclado en las tarjetas, soporte para `prefers-reduced-motion` y un menú móvil.
+**Sitio público (sin login)**
+- Portada editorial con proyectos destacados, búsqueda local y filtros por disciplina
+- Catálogo de proyectos (`/projects`) con filtros por área y página de detalle por slug
+- Catálogo de publicaciones (`/publicaciones`) y perfiles públicos de docentes (`/profesor/:id`)
+- Diseño responsive (desktop + móvil 375px) en español (`es-CO`)
+
+**Panel docente (`/dashboard`, con login)**
+- Resumen con estadísticas y contenido reciente (lecturas vía REST directo, resistentes a recarga F5)
+- CRUD de proyectos (portada + galería en Supabase Storage), recursos, publicaciones y actividades
+- Perfil docente con avatar, bio y especialización
+- Roles y permisos: `admin` (gestión total + `manage_teachers`), `teacher` (su propio contenido), `visitor` (solo lectura)
 
 ## Stack
 
-| Parte | Tecnología |
-| --- | --- |
-| UI | React 19 + TypeScript |
-| Bundler | Vite 8 |
-| Iconografía | lucide-react |
-| Estilos | CSS modular dentro de `src/App.css` + Tailwind base |
-| Rutas existentes | React Router |
-| Backend existente | Supabase, conservado para autenticación y dashboard |
+| Capa | Tecnología |
+|---|---|
+| UI | React 19 + TypeScript + Vite 8 |
+| Estilos | Tailwind CSS 4 |
+| Estado / formularios | Zustand (sesión en `sessionStorage`) · React Hook Form + Zod |
+| Rutas | React Router 7 |
+| Backend | Supabase (PostgreSQL + Auth + Storage) vía `supabase-js` y REST directo (`src/utils/supabaseRest.ts`) |
+| Tests E2E | Playwright + Chrome |
+| Deploy | Vercel (`dist/`, preset Vite) |
 
-## Desarrollo local
+## Inicio rápido
 
 ```bash
 npm install
-npm run dev
+npm run dev      # http://localhost:9989
 ```
 
-Vite utiliza el puerto `9988` en este repositorio. La compilación de producción se valida con:
+Variables de entorno (crear `.env`, nunca commitearlo):
+
+```text
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+```
+
+Comandos:
 
 ```bash
-npm run build
+npm run dev        # desarrollo (puerto 9989)
+npm run build      # tsc + build producción -> dist/
+npm run preview    # previsualizar build
+npm run lint       # ESLint
 ```
 
-El comando `npm run lint` permite revisar la calidad estática del código.
+Tests E2E (requieren dev corriendo + credenciales por entorno, nunca hardcodeadas):
+
+```bash
+$env:QA_ADMIN_EMAIL="usuario@institucional.edu"
+$env:QA_ADMIN_PASSWORD="***"
+npx playwright test --config=playwright.config.ts
+```
 
 ## Estructura relevante
 
-`src/pages/public/HomePage.tsx` contiene la experiencia pública principal de NODO / CIENCIA. `src/App.css` contiene el sistema visual de la portada: tipografía, layout, color, tarjetas, modal y breakpoints responsive. Las rutas de autenticación, catálogo, perfiles y dashboard existentes se mantienen para que la evolución visual no rompa el flujo institucional ya construido.
+```text
+src/
+  pages/public/       # HomePage, ProjectsCatalogPage, PublicationsCatalogPage, ...
+  pages/dashboard/    # DashboardHome, projects/resources/publications/activities/...
+  components/         # layout, dashboard, public, ui reutilizable
+  services/           # capa de datos (projects, resources, publications, activities, auth, dashboard, public)
+  hooks/              # useDashboardStats, useDashboardData, useProjects, ...
+  utils/supabaseRest.ts  # cliente REST directo (bypass LockManager en recargas F5)
+  store/authStore.ts  # sesión persistida en sessionStorage
+  config/permissions.ts  # roles y permisos
+supabase/             # schema, RLS y storage
+tests/                # specs Playwright
+```
 
 ## Despliegue en Vercel
 
-El proyecto es una aplicación Vite estática. En Vercel se debe importar este repositorio usando los siguientes valores:
-
 | Configuración | Valor |
-| --- | --- |
+|---|---|
 | Framework preset | Vite |
 | Build command | `npm run build` |
 | Output directory | `dist` |
-| Install command | `npm install` |
+| Variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
 
-Si se habilita Supabase en el entorno publicado, hay que configurar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en las variables de entorno de Vercel. La portada pública funciona sin esas variables porque sus proyectos destacados son datos de demostración locales; los flujos autenticados sí dependen de la configuración existente de Supabase.
+> Nota: por el `rewrite` de SPA (`/(.*) → /index.html`), rutas como `/.env` responden 200 con el `index.html`, **no** exponen variables. El `.env` local nunca se commitea ni se incluye en `dist/`.
 
-## Decisiones de producto
+## Estado y deuda conocida
 
-La propuesta prioriza el **proceso científico** sobre un listado institucional genérico. Cada tarjeta comunica una disciplina, una historia y una métrica corta para que la exploración sea visual y rápida. El contenido de ejemplo está escrito en español y puede sustituirse desde los servicios de proyectos ya presentes en `src/services/`.
+- ✅ Login, guards de ruta, CRUD, F5 en dashboard (verificado con Chrome: 0 `Cargando...` atascados tras reload)
+- ⚠️ SEO: faltan `description`, Open Graph/Twitter, `canonical` y `theme-color` (`index.html`)
+- ⚠️ ESLint: quedan errores `react-hooks/set-state-in-effect` y `preserve-manual-memoization` en hooks de fetching — son patrones intencionales con `requestId` anti-race verificados en vivo; migrarlos es tarea aparte (ver `ROADMAP.md`)
+- ⚠️ RLS de Storage: cualquier `teacher` puede actualizar/borrar objetos ajenos en `covers`/`gallery`; falta `requireOwnership` en update/delete de publications, resources y activities (solo projects lo tiene)
+
+Ver próximas funciones en [`ROADMAP.md`](./ROADMAP.md).
 
 ## Autoría
 
-Construido por **Manus AI** para el repositorio `Stiven211/Ciencias-tecnologia-institucional-informativa`.
+**Stiven Urrego** — Área de Ciencias Naturales y Tecnología, Colegio José Celestino Mutis.
