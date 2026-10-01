@@ -86,7 +86,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
       await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
       await expect(page.locator('h1')).toContainText('Ciencias Naturales y Tecnología')
       await expect(page.locator('main').getByText('Áreas').first()).toBeVisible({ timeout: 20000 })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       assertNoCriticalErrors(errors, 'Home - Carga')
     })
 
@@ -125,7 +125,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
       await page.goto(`${BASE_URL}/projects`, { waitUntil: 'domcontentloaded' })
       await expect(page.getByText('Repositorio de Proyectos')).toBeVisible({ timeout: 20000 })
       await expect(page.locator('input[placeholder*="Título"]')).toBeVisible({ timeout: 15000 })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       assertNoCriticalErrors(errors, 'Catalogo Proyectos - Carga')
     })
 
@@ -162,7 +162,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
       attachErrorCollector(page, errors)
 
       await page.goto(`${BASE_URL}/projects?technology=informatica`, { waitUntil: 'domcontentloaded' })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await page.waitForTimeout(2000)
       assertNoCriticalErrors(errors, 'Catalogo Proyectos - Filtro URL')
     })
@@ -174,7 +174,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
       await page.goto(`${BASE_URL}/publicaciones`, { waitUntil: 'domcontentloaded' })
       await expect(page.locator('main').getByText('Publicaciones').first()).toBeVisible({ timeout: 20000 })
       await page.locator('input[placeholder*="Buscar publicaciones"]').waitFor({ state: 'visible', timeout: 15000 })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       assertNoCriticalErrors(errors, 'Catalogo Publicaciones - Carga')
     })
 
@@ -351,7 +351,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
 
       await page.goto(`${BASE_URL}/about`, { waitUntil: 'domcontentloaded' })
       await expect(page.getByText('Sobre Nosotros')).toBeVisible({ timeout: 20000 })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       assertNoCriticalErrors(errors, 'Acerca de - Carga')
     })
 
@@ -423,7 +423,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
       await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'domcontentloaded' })
       await expect(page.locator('main').getByText('Mis Proyectos').first()).toBeVisible({ timeout: 20000 })
       await expect(page.locator('main').getByText('Recursos').first()).toBeVisible({ timeout: 15000 })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       assertNoCriticalErrors(errors, 'Dashboard Home - Carga')
     })
 
@@ -555,10 +555,10 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
       attachErrorCollector(page, errors)
 
       await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'domcontentloaded' })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
 
       await page.reload({ waitUntil: 'domcontentloaded' })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await page.waitForTimeout(3000)
 
       const criticalErrors = errors.filter((e) =>
@@ -589,7 +589,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
 
       await page.evaluate(() => localStorage.clear())
       await page.reload({ waitUntil: 'domcontentloaded' })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await expect(page.locator('main').getByText('Mis Proyectos').first()).toBeVisible({ timeout: 15000 })
       assertNoCriticalErrors(errors, 'localStorage.clear solo')
     })
@@ -607,7 +607,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
         sessionStorage.clear()
       })
       await page.reload({ waitUntil: 'domcontentloaded' })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
 
       await expect(page).toHaveURL(`${BASE_URL}/login`, { timeout: 15000 })
       await expect(page.locator('h2:has-text("Iniciar Sesión")')).toBeVisible({ timeout: 15000 })
@@ -624,7 +624,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
 
       await page.evaluate(() => localStorage.clear())
       await page.goto(`${BASE_URL}/dashboard/projects`, { waitUntil: 'domcontentloaded' })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await expect(page.locator('main').getByText('Mis Proyectos').first()).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(1000)
       assertNoCriticalErrors(errors, 'Navegacion localStorage.clear')
@@ -641,7 +641,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
 
       await clearStorage(page)
       await page.goto(`${BASE_URL}/about`, { waitUntil: 'domcontentloaded' })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await expect(page.getByText('Sobre Nosotros')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(1000)
       assertNoCriticalErrors(errors, 'About tras localStorage.clear')
@@ -680,7 +680,7 @@ test.describe('QA Suite - Area Ciencias y Tecnologia', () => {
 
       await page.waitForURL(`${BASE_URL}/dashboard/publications`, { timeout: 60000 })
       await expect(page.locator('main').getByText('Mis Publicaciones').first()).toBeVisible({ timeout: 15000 })
-      await page.waitForLoadState('networkidle', { timeout: 15000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await page.waitForTimeout(3000)
 
       await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 15000 })
@@ -707,14 +707,14 @@ test('Editar publicacion - Modifica titulo y verifica en lista', async ({ page }
 
 await page.click('button:has-text(" Crear publicación")')
       await page.waitForURL(`${BASE_URL}/dashboard/publications`, { timeout: 60000 })
-      await page.waitForLoadState('networkidle', { timeout: 15000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
 
       const card = page.locator('.bg-white.rounded-2xl').filter({ hasText: uniqueTitle }).first()
       await card.locator('a[href*="/edit"]').click()
 
-      await page.waitForLoadState('networkidle', { timeout: 15000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await page.waitForTimeout(3000)
       await expect(page.getByRole('heading', { name: 'Editar publicación' })).toBeVisible({ timeout: 15000 })
 
@@ -724,7 +724,7 @@ await page.click('button:has-text(" Crear publicación")')
 
       await page.getByRole('button', { name: 'Actualizar publicación' }).click()
       await page.waitForURL(`${BASE_URL}/dashboard/publications`, { timeout: 60000 })
-      await page.waitForLoadState('networkidle', { timeout: 15000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await page.waitForTimeout(3000)
       await expect(page.getByText(editedTitle).first()).toBeVisible({ timeout: 15000 })
       assertNoCriticalErrors(errors, 'Editar publicacion')
@@ -759,7 +759,7 @@ await page.click('button:has-text(" Crear publicación")')
       await page.click('button:has-text("Eliminar")')
 
       await page.waitForTimeout(5000)
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
       await page.waitForTimeout(3000)
       await expect(page.locator('h3').filter({ hasText: uniqueTitle }).first()).toBeHidden({ timeout: 15000 })
       assertNoCriticalErrors(errors, 'Eliminar publicacion')
@@ -782,7 +782,7 @@ await page.click('button:has-text(" Crear publicación")')
 
       await page.goto(`${BASE_URL}/dashboard/profile`, { waitUntil: 'domcontentloaded' })
       await expect(page.getByRole('heading', { name: 'Mi Perfil' })).toBeVisible({ timeout: 20000 })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
 
       // Fill both name and bio to ensure form is valid
       const nameInput = page.locator('label:has-text("Nombre completo") + div input').first()
@@ -793,7 +793,7 @@ await page.click('button:has-text(" Crear publicación")')
       await page.waitForTimeout(1000)
 
       await page.click('button:has-text("Guardar cambios")')
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
 
       await expect(page.getByText('Perfil actualizado correctamente')).toBeVisible({ timeout: 15000 })
       await page.waitForTimeout(2000)
@@ -817,7 +817,7 @@ await page.click('button:has-text(" Crear publicación")')
 
       await page.goto(`${BASE_URL}/dashboard/profile`, { waitUntil: 'domcontentloaded' })
       await expect(page.getByRole('heading', { name: 'Mi Perfil' })).toBeVisible({ timeout: 20000 })
-      await page.waitForLoadState('networkidle', { timeout: 30000 })
+      await page.waitForTimeout(6000) // networkidle no aplica: keep-alive Supabase lo impide
 
       const nameInput = page.locator('label:has-text("Nombre completo") + div input').first()
       await nameInput.clear()
