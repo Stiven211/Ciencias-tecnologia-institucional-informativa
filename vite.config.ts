@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // modificacion de puerto a 9988
+  // Puerto de desarrollo local (Playwright usa http://localhost:9989)
   server: {
-    port: 9988,
+    port: 9989,
     allowedHosts: true,
   }
 })
