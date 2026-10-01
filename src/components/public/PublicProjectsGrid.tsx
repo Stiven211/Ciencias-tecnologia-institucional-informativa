@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { PublicProjectCard } from './PublicProjectCard'
 import { restSelect } from '../../utils/supabaseRest'
 import type { Project } from '../../types'
@@ -8,54 +8,56 @@ interface PublicProjectsGridProps {
   filters: {
     search: string
     technologies: string[]
-    categories: string[]
   }
 }
 
+const normalize = (value: string) =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
 export const PublicProjectsGrid = ({ filters }: PublicProjectsGridProps) => {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [allProjects, setAllProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const buildQueryString = useCallback(() => {
-    const parts = [
-      'select=*,professor:profiles(full_name,avatar_url)',
-      "status=eq.published",
-      'order=created_at.desc',
-    ]
-
-    if (filters.search) {
-      const term = filters.search.trim()
-      parts.push(`or=(title.ilike.%25${encodeURIComponent(term)}%25,description.ilike.%25${encodeURIComponent(term)}%25,technologies.cs.{${encodeURIComponent(term)}})`)
-    }
-
-    if (filters.technologies && filters.technologies.length > 0) {
-      const techs = filters.technologies.map(t => `"${t}"`).join(',')
-      parts.push(`technologies.cs.{${techs}}`)
-    }
-
-    if (filters.categories && filters.categories.length > 0) {
-      const cats = filters.categories.map(c => `"${c}"`).join(',')
-      parts.push(`categories.ov.{${cats}}`)
-    }
-
-    return parts.join('&')
-  }, [filters])
 
   const loadProjects = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const queryString = buildQueryString()
-      const data = await restSelect<Project>('projects', queryString, { mode: 'anon' })
-      setProjects(data)
+      const data = await restSelect<Project>(
+        'projects',
+        'select=*,professor:profiles(full_name,avatar_url)&status=eq.published&order=created_at.desc',
+        { mode: 'anon' }
+      )
+      setAllProjects(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error cargando proyectos')
       console.error('Error loading projects:', err)
     } finally {
       setLoading(false)
     }
-  }, [buildQueryString])
+  }, [])
+
+  const projects = useMemo(() => {
+    const term = normalize(filters.search ?? '')
+    const selectedTechs = (filters.technologies ?? []).map(normalize)
+
+    return allProjects.filter((project) => {
+      const technologies = (project.technologies ?? []).map(normalize)
+      const professorName = normalize(project.professor?.full_name ?? '')
+
+      const matchesSearch =
+        term.length === 0 ||
+        normalize(project.title ?? '').includes(term) ||
+        normalize(project.description ?? '').includes(term) ||
+        professorName.includes(term) ||
+        technologies.some((tech) => tech.includes(term))
+
+      const matchesTech =
+        selectedTechs.length === 0 || selectedTechs.some((tech) => technologies.includes(tech))
+
+      return matchesSearch && matchesTech
+    })
+  }, [allProjects, filters.search, filters.technologies])
 
   useEffect(() => {
     loadProjects()

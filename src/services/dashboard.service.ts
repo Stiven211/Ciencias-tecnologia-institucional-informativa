@@ -1,8 +1,8 @@
-import { supabase } from '../lib/supabaseClient'
 import { projectsService } from './projects.service'
 import { resourcesService } from './resources.service'
 import { publicationsService } from './publications.service'
 import { activitiesService } from './activities.service'
+import { restCount } from '../utils/supabaseRest'
 import type { Project, Resource, Publication } from '../types'
 
 export interface DashboardStats {
@@ -31,10 +31,7 @@ export const dashboardService = {
     const [projectsResult, resourcesResult, collaboratorsResult] = await Promise.allSettled([
       projectsService.getProjectCountsForDashboard(userId).then(r => r.total),
       resourcesService.getResourcesCountForDashboard(userId),
-      supabase.from('profiles').select('id', { count: 'exact', head: true })
-        .eq('role', 'teacher')
-        .neq('id', userId)
-        .then(r => r.count ?? 0),
+      restCount('profiles', { role: 'eq.teacher', id: 'neq.' + userId }),
     ])
 
     return {

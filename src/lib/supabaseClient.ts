@@ -32,11 +32,9 @@ const createSafeSessionStorage = (): Storage => {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
     storage: createSafeSessionStorage(),
-    // Evita deadlock conocido del LockManager interno de supabase-js (navigator.locks)
-    // en algunos navegadores, que bloquea auth.getSession() y las queries de datos.
     lock: async <R,>(_key: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => {
       return await fn()
     },

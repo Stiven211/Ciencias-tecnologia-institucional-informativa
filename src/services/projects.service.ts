@@ -1,15 +1,36 @@
 import { supabase } from '../lib/supabaseClient'
 import type { Project, ProjectInsert } from '../types'
+import { restSelect, restCount, restInsert, restUpdate, restDelete } from '../utils/supabaseRest'
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB
+const PROFILE_FIELDS = 'id,full_name,avatar_url'
+
+interface ProjectsFilterOptions {
+  search?: string
+  status?: string
+  professorId?: string
+}
+
+const buildProjectsFilters = (options?: ProjectsFilterOptions): Record<string, string> => {
+  const filters: Record<string, string> = {}
+  if (options?.professorId) filters.professor_id = 'eq.' + options.professorId
+  if (options?.status) filters.status = 'eq.' + options.status
+  if (options?.search) {
+    const term = options.search.replace(/[,()]/g, ' ')
+    filters.or = '(title.ilike.*' + term + '*,description.ilike.*' + term + '*)'
+  }
+  return filters
+}
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 const validateImage = (file: File, label: string): void => {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    throw new Error(`Tipo de archivo no permitido para ${label}. Use JPG, PNG, WEBP o GIF.`)
+    throw new Error('Tipo de archivo no permitido para ' + label + '. Use JPG, PNG, WEBP o GIF.')
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error(`La imagen de ${label} excede el tamaño máximo permitido (5MB).`)
+    throw new Error('La imagen de ' + label + ' excede el tamano maximo permitido (5MB).')
   }
 }
 
@@ -20,14 +41,10 @@ const requireProjectOwnership = async (
 ): Promise<void> => {
   if (isAdmin) return
 
-  const { data, error } = await supabase
-    .from('projects')
-    .select('professor_id')
-    .eq('id', projectId)
-    .single()
+  const data = await restSelect<{ professor_id: string }>('projects', 'select=professor_id&id=eq.' + projectId)
 
-  if (error) throw error
-  if (!data || data.professor_id !== userId) {
+  const proj = data[0]
+  if (!proj || proj.professor_id !== userId) {
     throw new Error('No tienes permisos para modificar este proyecto.')
   }
 }
@@ -40,80 +57,55 @@ export const projectsService = {
     professorId?: string
     page?: number
   }) {
-    let query = supabase
-      .from('projects')
-      .select(`
-        *,
-        professor:profiles(id, full_name, avatar_url)
-      `, { count: 'exact' })
+    const params: string[] = ['select=*,professor:profiles(' + PROFILE_FIELDS + ')']
 
     if (options?.professorId) {
-      query = query.eq('professor_id', options.professorId)
+      params.push('professor_id=eq.' + options.professorId)
     }
 
     if (options?.status) {
-      query = query.eq('status', options.status)
+      params.push('status=eq.' + options.status)
     }
 
     if (options?.search) {
-      query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%`)
+      const term = options.search.replace(/[,()]/g, ' ')
+      params.push('or=(title.ilike.*' + term + '*,description.ilike.*' + term + '*)')
     }
 
-    if (options?.limit !== undefined && options?.page !== undefined && options?.page > 0) {
-      const offset = (options.page - 1) * options.limit
-      query = query.range(offset, offset + options.limit - 1)
+    if (options?.limit !== undefined && options?.page !== undefined && options.page > 0) {
+      params.push('offset=' + ((options.page - 1) * options.limit))
+      params.push('limit=' + options.limit)
     } else if (options?.limit !== undefined) {
-      query = query.limit(options.limit)
+      params.push('limit=' + options.limit)
     }
 
-    query = query.order('created_at', { ascending: false })
+    params.push('order=created_at.desc')
 
-    const { data, error, count } = await query
-
-    if (error) throw error
-    return { data: (data ?? []) as Project[], count: count ?? 0 }
+    const data = await restSelect<Project>('projects', params.join('&'))
+    const count = await restCount('projects', buildProjectsFilters(options))
+    return { data, count }
   },
 
   async getProjectById(id: string): Promise<Project> {
-    const { data, error } = await supabase
-      .from('projects')
-      .select(`
-        *,
-        professor:profiles(id, full_name, avatar_url)
-      `)
-      .eq('id', id)
-      .single()
+    const data = await restSelect<Project>(
+      'projects',
+      'select=*,professor:profiles(' + PROFILE_FIELDS + ')&id=eq.' + id + '&limit=1'
+    )
 
-    if (error) throw error
-    return data as Project
+    if (!data[0]) throw new Error('Proyecto no encontrado')
+    return data[0]
   },
 
   async getProjectsByProfessor(professorId: string): Promise<Project[]> {
-    const { data, error } = await supabase
-      .from('projects')
-      .select(`
-        *,
-        professor:profiles(id, full_name, avatar_url)
-      `)
-      .eq('professor_id', professorId)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return (data ?? []) as Project[]
+    return restSelect<Project>(
+      'projects',
+      'select=*,professor:profiles(' + PROFILE_FIELDS + ')&professor_id=eq.' + professorId + '&order=created_at.desc'
+    )
   },
 
   async createProject(project: ProjectInsert): Promise<Project> {
-    const { data, error } = await supabase
-      .from('projects')
-      .insert([project])
-      .select('*')
-      .single()
-
-    if (error) throw error
-    if (!data) {
-      throw new Error('No se recibió respuesta del servidor al crear el proyecto.')
-    }
-    return data as Project
+    const data = await restInsert<Project>('projects', [project])
+    return data[0]
   },
 
   async updateProject(
@@ -123,15 +115,8 @@ export const projectsService = {
   ): Promise<Project> {
     await requireProjectOwnership(id, context.userId, context.isAdmin)
 
-    const { data, error } = await supabase
-      .from('projects')
-      .update(project)
-      .eq('id', id)
-      .select('*')
-      .single()
-
-    if (error) throw error
-    return data as Project
+    const data = await restUpdate<Project>('projects', project, { id })
+    return data[0]
   },
 
   async deleteProject(
@@ -139,21 +124,15 @@ export const projectsService = {
     context: { userId: string; isAdmin: boolean }
   ): Promise<void> {
     await requireProjectOwnership(id, context.userId, context.isAdmin)
-
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    await restDelete('projects', { id })
   },
 
   async uploadCoverImage(file: File, projectId: string, userId: string): Promise<string> {
     validateImage(file, 'portada')
 
     const fileExt = file.name.split('.').pop()
-    const fileName = `${projectId}-${Date.now()}.${fileExt}`
-    const filePath = `${userId}/${fileName}`
+    const fileName = projectId + '-' + Date.now() + '.' + fileExt
+    const filePath = userId + '/' + fileName
 
     const { error } = await supabase.storage
       .from('covers')
@@ -169,11 +148,11 @@ export const projectsService = {
   },
 
   async uploadGalleryImage(file: File, projectId: string, userId: string): Promise<string> {
-    validateImage(file, 'galería')
+    validateImage(file, 'galeria')
 
     const fileExt = file.name.split('.').pop()
-    const fileName = `${projectId}-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`
-    const filePath = `${userId}/${fileName}`
+    const fileName = projectId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + fileExt
+    const filePath = userId + '/' + fileName
 
     const { error } = await supabase.storage
       .from('gallery')
@@ -189,30 +168,20 @@ export const projectsService = {
   },
 
   async getRecentProjectsForDashboard(professorId: string, limit = 5): Promise<Project[]> {
-    const { data, error } = await supabase
-      .from('projects')
-      .select(`
-        *,
-        professor:profiles(id, full_name, avatar_url)
-      `)
-      .eq('professor_id', professorId)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    if (error) throw error
-    return (data ?? []) as Project[]
+    return restSelect<Project>(
+      'projects',
+      'select=*,professor:profiles(' + PROFILE_FIELDS + ')&professor_id=eq.' + professorId +
+        '&order=created_at.desc&limit=' + limit
+    )
   },
 
   async getProjectCountsForDashboard(professorId: string): Promise<{ total: number; published: number; drafts: number }> {
-    const [{ count: total }, { count: published }, { count: drafts }] = await Promise.all([
-      supabase.from('projects').select('id', { count: 'exact', head: true }).eq('professor_id', professorId),
-      supabase.from('projects').select('id', { count: 'exact', head: true }).eq('professor_id', professorId).eq('status', 'published'),
-      supabase.from('projects').select('id', { count: 'exact', head: true }).eq('professor_id', professorId).eq('status', 'draft'),
+    const base = { professor_id: 'eq.' + professorId }
+    const [total, published, drafts] = await Promise.all([
+      restCount('projects', base),
+      restCount('projects', { ...base, status: 'eq.published' }),
+      restCount('projects', { ...base, status: 'eq.draft' }),
     ])
-    return {
-      total: total ?? 0,
-      published: published ?? 0,
-      drafts: drafts ?? 0,
-    }
+    return { total, published, drafts }
   },
 }

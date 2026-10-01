@@ -10,7 +10,7 @@ import { useToast } from '../ui/ToastContext'
 import type { Publication } from '../../types'
 
 const publicationSchema = z.object({
-  title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
+  title: z.string().min(3, 'El titulo debe tener al menos 3 caracteres'),
   excerpt: z.string().optional(),
   content: z.string().optional(),
   published: z.boolean().optional(),
@@ -68,9 +68,9 @@ export const PublicationForm = ({ publication, onSuccess }: PublicationFormProps
 
   const onSubmit: SubmitHandler<PublicationFormValues> = async (data) => {
     if (!user?.id) {
-      const errorMsg = 'Usuario no autenticado. Por favor, inicia sesión.'
+      const errorMsg = 'Usuario no autenticado. Por favor, inicia sesion.'
       setError(errorMsg)
-      showError('Error de autenticación', errorMsg)
+      showError('Error de autenticacion', errorMsg)
       return
     }
 
@@ -121,7 +121,7 @@ export const PublicationForm = ({ publication, onSuccess }: PublicationFormProps
 
       onSuccess()
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al guardar la publicación'
+      const errorMessage = err instanceof Error ? err.message : 'Error al guardar la publicacion'
       setError(errorMessage)
       showError('Error', errorMessage)
     } finally {
@@ -220,7 +220,7 @@ export const PublicationForm = ({ publication, onSuccess }: PublicationFormProps
 
       <div className="flex justify-end">
         <Button type="submit" loading={isSubmitting}>
-          {publication ? 'Actualizar publicación' : 'Crear publicación'}
+           {publication ? 'Actualizar publicación' : 'Crear publicación'}
         </Button>
       </div>
     </form>

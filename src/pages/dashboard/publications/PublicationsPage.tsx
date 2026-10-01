@@ -44,9 +44,9 @@ export const PublicationsPage = () => {
       })
       await refetch()
       setDeleteModal({ open: false })
+      setIsDeleting(false)
     } catch (err) {
       console.error('Error deleting publication:', err)
-    } finally {
       setIsDeleting(false)
     }
   }

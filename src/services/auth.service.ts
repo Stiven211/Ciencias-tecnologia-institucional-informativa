@@ -1,6 +1,7 @@
-import { supabase } from '../lib/supabaseClient'
 import type { User, Profile } from '../types'
 import { PERMISSIONS } from '../config/permissions'
+import { restSelect, restCount, restInsert, restAuthLogin, restAuthLogout, getAccessTokenFromStorage, restAuthSignUp, restAuthResetPassword, restAuthUpdatePassword } from '../utils/supabaseRest'
+import { withTimeout } from '../utils/fetchTimeout'
 
 const MAX_INSTITUTIONAL_USERS = 7
 
@@ -13,110 +14,100 @@ const buildUserFromProfile = (profile: Profile): User => ({
   permissions: PERMISSIONS[profile.role] ?? [],
 })
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length < 2) return null
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=')
+    return JSON.parse(decodeURIComponent(
+      atob(padded)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    ))
+  } catch {
+    return null
+  }
+}
+
+function getCurrentUserId(): string | null {
+  const token = getAccessTokenFromStorage()
+  if (!token) return null
+  const payload = decodeJwtPayload(token)
+  if (!payload) return null
+  const sub = payload.sub ?? payload.userId
+  return typeof sub === 'string' ? sub : null
+}
+
 export const authService = {
   async getInstitutionalUsersCount(): Promise<number> {
-    const { count, error } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact' })
-
-    if (error) throw error
-    return count ?? 0
+    return restCount('profiles', {}, { mode: 'anon' })
   },
 
   async signUp(email: string, password: string, fullName: string): Promise<User | null> {
-    const { count } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact' })
+    const count = await restCount('profiles', {}, { mode: 'anon' })
 
-    if ((count ?? 0) >= MAX_INSTITUTIONAL_USERS) {
-      throw new Error('Se alcanzó el límite de usuarios institucionales. Contacte al administrador.')
+    if (count >= MAX_INSTITUTIONAL_USERS) {
+      throw new Error('Se alcanzo el limite de usuarios institucionales. Contacte al administrador.')
     }
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    const session = await restAuthSignUp(email, password)
 
-    if (signUpError) throw signUpError
-    if (!signUpData.user) return null
-
-    let session = signUpData.session
-    if (!session) {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (signInError) throw signInError
-      session = signInData.session
-    }
-
-    const { error: insertError } = await supabase.from('profiles').insert({
-      id: signUpData.user.id,
+    await restInsert('profiles', [{
+      id: session.user.id,
       email,
       full_name: fullName,
       role: 'teacher',
       avatar_url: null,
       bio: null,
       specialization: null,
-    })
+    }])
 
-    if (insertError) throw insertError
+    const rows = await withTimeout(
+      restSelect<Profile>('profiles', 'select=*&id=eq.' + session.user.id),
+      10000,
+    )
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', signUpData.user.id)
-      .single()
-
-    if (profileError) throw profileError
-    return buildUserFromProfile(profile as Profile)
+    const profile = rows[0]
+    if (!profile) throw new Error('No se encontro el perfil del usuario recien creado.')
+    return buildUserFromProfile(profile)
   },
 
   async signIn(email: string, password: string): Promise<User | null> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const session = await restAuthLogin(email, password)
 
-    if (error) throw error
-    if (!data.user) return null
+    const rows = await withTimeout(
+      restSelect<Profile>('profiles', 'select=*&id=eq.' + session.user.id),
+      10000,
+    )
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .single()
-
-    if (profileError) throw profileError
-    return buildUserFromProfile(profile as Profile)
+    const profile = rows[0]
+    if (!profile) throw new Error('No se encontro el perfil del usuario.')
+    return buildUserFromProfile(profile)
   },
 
   async signOut(): Promise<void> {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    await restAuthLogout()
   },
 
   async resetPassword(email: string, redirectTo: string): Promise<void> {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
-    if (error) throw error
+    await restAuthResetPassword(email, redirectTo)
   },
 
   async getCurrentProfile(): Promise<Profile | null> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+    const userId = getCurrentUserId()
+    if (!userId) return null
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    const rows = await withTimeout(
+      restSelect<Profile>('profiles', 'select=*&id=eq.' + userId + '&limit=1'),
+      10000,
+    )
 
-    if (error) throw error
-    return (data as Profile | null) ?? null
+    return rows[0] ?? null
   },
 
   async changePassword(newPassword: string): Promise<void> {
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (error) throw error
+    await restAuthUpdatePassword(newPassword)
   },
 }

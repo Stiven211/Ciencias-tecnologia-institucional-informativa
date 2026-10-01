@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Search, Home, User, Menu } from 'lucide-react'
+import { Search, Home, Menu } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { Avatar } from '../ui/Avatar'
 
 interface NavbarProps {
   onOpenSidebar?: () => void
@@ -75,9 +76,7 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
               aria-haspopup="menu"
               aria-expanded={userMenuOpen}
             >
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                <User size={18} className="text-white" />
-              </div>
+              <Avatar src={user?.avatarUrl ?? null} size={8} />
               <span className="hidden sm:inline text-sm font-medium text-navy-900">{user?.fullName}</span>
             </button>
 

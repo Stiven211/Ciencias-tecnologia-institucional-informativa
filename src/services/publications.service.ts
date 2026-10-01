@@ -1,8 +1,9 @@
-import { supabase } from '../lib/supabaseClient'
+﻿import { supabase } from '../lib/supabaseClient'
 import type { Publication } from '../types'
+import { restSelect, restInsert, restUpdate, restDelete, restCount } from '../utils/supabaseRest'
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB
-const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024 // 20MB
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
 
 const ALLOWED_DOCUMENT_TYPES = [
   'application/pdf',
@@ -11,6 +12,8 @@ const ALLOWED_DOCUMENT_TYPES = [
   'text/plain',
 ]
 
+const PROFESSOR_FIELDS = 'full_name,avatar_url'
+
 const requirePublicationOwnership = async (
   publicationId: string,
   userId: string,
@@ -18,15 +21,14 @@ const requirePublicationOwnership = async (
 ): Promise<void> => {
   if (isAdmin) return
 
-  const { data, error } = await supabase
-    .from('publications')
-    .select('professor_id')
-    .eq('id', publicationId)
-    .single()
+  const data = await restSelect<Publication>(
+    'publications',
+    'select=professor_id&id=eq.' + publicationId,
+  )
 
-  if (error) throw error
-  if (!data || data.professor_id !== userId) {
-    throw new Error('No tienes permiso para modificar esta publicación.')
+  const pub = data[0]
+  if (!pub || pub.professor_id !== userId) {
+    throw new Error('No tienes permiso para modificar esta publicacion.')
   }
 }
 
@@ -39,93 +41,58 @@ const validatePublicationFile = (file: File): void => {
   }
 
   if (isImage && file.size > MAX_IMAGE_BYTES) {
-    throw new Error('La imagen excede el tamaño máximo permitido (5MB).')
+    throw new Error('La imagen excede el tamano maximo permitido (5MB).')
   }
 
   if (isDocument && file.size > MAX_DOCUMENT_BYTES) {
-    throw new Error('El documento excede el tamaño máximo permitido (20MB).')
+    throw new Error('El documento excede el tamano maximo permitido (20MB).')
   }
 }
 
 export const publicationsService = {
   async getPublicationById(id: string): Promise<Publication> {
-    const { data, error } = await supabase
-      .from('publications')
-      .select(`
-        *,
-        professor:profiles(full_name, avatar_url)
-      `)
-      .eq('id', id)
-      .single()
+    const data = await restSelect<Publication>(
+      'publications',
+      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&id=eq.' + id + '&limit=1'
+    )
 
-    if (error) throw error
-    return data as Publication
+    if (!data[0]) throw new Error('Publicacion no encontrada')
+    return data[0]
   },
 
   async getMyPublications(userId: string): Promise<Publication[]> {
-    const { data, error } = await supabase
-      .from('publications')
-      .select(`
-        *,
-        professor:profiles(full_name, avatar_url)
-      `)
-      .eq('professor_id', userId)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return (data ?? []) as Publication[]
+    return restSelect<Publication>(
+      'publications',
+      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + userId + '&order=created_at.desc'
+    )
   },
 
   async getAllPublications(): Promise<Publication[]> {
-    const { data, error } = await supabase
-      .from('publications')
-      .select(`
-        *,
-        professor:profiles(full_name, avatar_url)
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return (data ?? []) as Publication[]
+    return restSelect<Publication>(
+      'publications',
+      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&order=created_at.desc'
+    )
   },
 
   async getPublicationsByProfessor(professorId: string): Promise<Publication[]> {
-    const { data, error } = await supabase
-      .from('publications')
-      .select('*')
-      .eq('professor_id', professorId)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    return (data ?? []) as Publication[]
+    return restSelect<Publication>(
+      'publications',
+      'select=*&professor_id=eq.' + professorId + '&order=created_at.desc'
+    )
   },
 
   async getRecentPublications(limit = 5): Promise<Publication[]> {
-    const { data, error } = await supabase
-      .from('publications')
-      .select(`
-        *,
-        professor:profiles(full_name, avatar_url)
-      `)
-      .eq('published', true)
-      .order('published_at', { ascending: false })
-      .limit(limit)
-
-    if (error) throw error
-    return (data ?? []) as Publication[]
+    return restSelect<Publication>(
+      'publications',
+      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&published=eq.true&order=published_at.desc&limit=' + limit
+    )
   },
 
   async createPublication(
     publication: Omit<Publication, 'id' | 'created_at' | 'updated_at'>
   ): Promise<Publication> {
-    const { data, error } = await supabase
-      .from('publications')
-      .insert([publication])
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as Publication
+    const data = await restInsert<Publication>('publications', [publication])
+    return data[0]
   },
 
   async updatePublication(
@@ -135,15 +102,8 @@ export const publicationsService = {
   ): Promise<Publication> {
     await requirePublicationOwnership(id, context.userId, context.isAdmin)
 
-    const { data, error } = await supabase
-      .from('publications')
-      .update(publication)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as Publication
+    const data = await restUpdate<Publication>('publications', publication, { id })
+    return data[0]
   },
 
   async deletePublication(
@@ -151,24 +111,18 @@ export const publicationsService = {
     context: { userId: string; isAdmin: boolean }
   ): Promise<void> {
     await requirePublicationOwnership(id, context.userId, context.isAdmin)
-
-    const { error } = await supabase
-      .from('publications')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    await restDelete('publications', { id })
   },
 
   async uploadPublicationFile(file: File, publicationId: string, userId: string): Promise<string> {
     const fileExt = file.name.split('.').pop()
     if (!fileExt) {
-      throw new Error('No se pudo determinar la extensión del archivo.')
+      throw new Error('No se pudo determinar la extension del archivo.')
     }
 
     validatePublicationFile(file)
 
-    const filePath = `${userId}/${publicationId}-${Date.now()}.${fileExt}`
+    const filePath = userId + '/' + publicationId + '-' + Date.now() + '.' + fileExt
 
     const { error } = await supabase.storage
       .from('publications')
@@ -184,25 +138,15 @@ export const publicationsService = {
   },
 
   async getRecentPublicationsForDashboard(professorId: string, limit = 5): Promise<Publication[]> {
-    const { data, error } = await supabase
-      .from('publications')
-      .select(`
-        *,
-        professor:profiles(full_name, avatar_url)
-      `)
-      .eq('professor_id', professorId)
-      .order('created_at', { ascending: false })
-      .limit(limit)
-
-    if (error) throw error
-    return (data ?? []) as Publication[]
+    return restSelect<Publication>(
+      'publications',
+      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + professorId +
+        '&order=created_at.desc&limit=' + limit
+    )
   },
 
   async getPublicationsCountForDashboard(professorId: string): Promise<number> {
-    const { count } = await supabase
-      .from('publications')
-      .select('id', { count: 'exact', head: true })
-      .eq('professor_id', professorId)
-    return count ?? 0
+    return await restCount('publications', { professor_id: 'eq.' + professorId })
   },
 }
+

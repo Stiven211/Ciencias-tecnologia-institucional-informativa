@@ -8,10 +8,9 @@ export const ProjectsCatalogPage = () => {
   const [searchParams] = useSearchParams()
   const urlTechnology = searchParams.get('technology')
 
-  const [filters, setFilters] = useState<{ search: string; technologies: string[]; categories: string[] }>({
+  const [filters, setFilters] = useState<{ search: string; technologies: string[] }>({
     search: '',
     technologies: urlTechnology ? [urlTechnology] : [],
-    categories: [],
   })
 
   return (

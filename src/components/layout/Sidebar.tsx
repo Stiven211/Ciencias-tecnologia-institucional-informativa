@@ -6,6 +6,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { navigation } from '../../config/navigation'
+import { Avatar } from '../ui/Avatar'
 
 interface SidebarProps {
   onNavigate?: () => void
@@ -70,9 +71,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       <div className="p-4 border-t border-navy-800/50">
         {!collapsed && user && (
           <div className="flex items-center space-x-3 px-2 py-3">
-            <div className="w-10 h-10 bg-navy-700 rounded-full flex items-center justify-center text-sm font-medium">
-              {user.fullName?.charAt(0)}
-            </div>
+            <Avatar src={user.avatarUrl ?? null} size={10} />
             <div>
               <p className="font-medium text-white text-sm">{user.fullName}</p>
               <p className="text-navy-400 capitalize text-xs">{user.role}</p>
