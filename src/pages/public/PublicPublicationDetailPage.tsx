@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { publicService } from '../../services/public.service'
 import { PublicLayout } from '../../components/layout/PublicLayout'
+import type { Publication } from '../../types'
 
 export const PublicPublicationDetailPage = () => {
   const { id } = useParams<{ id: string }>()
-  const [publication, setPublication] = useState<any | null>(null)
+  const [publication, setPublication] = useState<Publication | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
