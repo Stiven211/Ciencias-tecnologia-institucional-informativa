@@ -93,4 +93,29 @@ export const profileService = {
     const updated = await restUpdate<Profile>('profiles', { role }, { id })
     return updated[0]
   },
+
+  /**
+   * F1. Delegar o revocar el permiso de invitar profesores. El trigger
+   * prevent_profile_invite_flag_escalation lo rechaza en BD si quien llama
+   * no es admin, así que el 403 llega aunque el frontend se equivoque.
+   */
+  async updateInvitePermission(
+    id: string,
+    canInvite: boolean,
+    context: UpdateRoleContext
+  ): Promise<Profile> {
+    if (!context.isAdmin) {
+      throw new Error('No tienes permisos para delegar invitaciones.')
+    }
+    if (!id) {
+      throw new Error('Identificador de usuario invalido.')
+    }
+
+    const updated = await restUpdate<Profile>(
+      'profiles',
+      { can_invite_teachers: canInvite },
+      { id }
+    )
+    return updated[0]
+  },
 }

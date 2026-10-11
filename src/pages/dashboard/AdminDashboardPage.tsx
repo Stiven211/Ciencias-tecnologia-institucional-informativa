@@ -75,6 +75,26 @@ export const AdminDashboardPage = () => {
   }, [fetchData])
 
   const [roleError, setRoleError] = useState<string | null>(null)
+  const [pendingInviteFlag, setPendingInviteFlag] = useState<string | null>(null)
+
+  const toggleInvitePermission = async (id: string, canInvite: boolean) => {
+    if (!user?.id) return
+    const previous = canInvite
+    setPendingInviteFlag(id)
+    setRoleError(null)
+    try {
+      const updated = await profileService.updateInvitePermission(id, !canInvite, {
+        userId: user.id,
+        isAdmin: user.role === 'admin',
+      })
+      setProfessors((prev) => prev.map((p) => (p.id === id ? updated : p)))
+    } catch (err) {
+      setRoleError(err instanceof Error ? err.message : 'Error al actualizar la delegación')
+      setProfessors((prev) => prev.map((p) => (p.id === id ? { ...p, can_invite_teachers: previous } : p)))
+    } finally {
+      setPendingInviteFlag(null)
+    }
+  }
 
   const updateProfessorRole = async (id: string, role: UserRole) => {
     if (!user?.id) return
@@ -154,6 +174,14 @@ export const AdminDashboardPage = () => {
       </div>
 
       {activeTab === 'professors' && (
+        <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 text-sm">
+          <strong>«Puede invitar»</strong> delega en ese profesor la creación de
+          cuentas nuevas. Podrá invitar a otros docentes, pero siempre con rol
+          profesor: delegar no da permisos de administrador.
+        </div>
+      )}
+
+      {activeTab === 'professors' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-navy-200">
             <thead className="bg-navy-50">
@@ -161,6 +189,7 @@ export const AdminDashboardPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-navy-500 uppercase">Nombre</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-navy-500 uppercase">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-navy-500 uppercase">Rol</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-navy-500 uppercase">Puede invitar</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-navy-500 uppercase">Acciones</th>
               </tr>
             </thead>
@@ -179,6 +208,20 @@ export const AdminDashboardPage = () => {
                       <option value="teacher">Profesor</option>
                       <option value="admin">Admin</option>
                     </select>
+                  </td>
+                  <td className="px-6 py-4">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={p.can_invite_teachers}
+                        disabled={pendingInviteFlag === p.id}
+                        onChange={() => toggleInvitePermission(p.id, p.can_invite_teachers)}
+                        className="h-4 w-4 rounded border-navy-300 text-green-600 focus:ring-green-500 disabled:opacity-50"
+                      />
+                      <span className="text-xs text-navy-600">
+                        {p.can_invite_teachers ? 'Sí' : 'No'}
+                      </span>
+                    </label>
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <button disabled className="text-red-600 hover:text-red-800 opacity-50 cursor-not-allowed">
