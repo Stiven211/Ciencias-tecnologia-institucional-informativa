@@ -1,4 +1,4 @@
-﻿import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 import type { Publication } from '../types'
 import { restSelect, restInsert, restUpdate, restDelete, restCount } from '../utils/supabaseRest'
 
@@ -53,7 +53,7 @@ export const publicationsService = {
   async getPublicationById(id: string): Promise<Publication> {
     const data = await restSelect<Publication>(
       'publications',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&id=eq.' + id + '&limit=1'
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&id=eq.' + id + '&limit=1'
     )
 
     if (!data[0]) throw new Error('Publicacion no encontrada')
@@ -63,14 +63,14 @@ export const publicationsService = {
   async getMyPublications(userId: string): Promise<Publication[]> {
     return restSelect<Publication>(
       'publications',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + userId + '&order=created_at.desc'
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + userId + '&order=created_at.desc'
     )
   },
 
   async getAllPublications(): Promise<Publication[]> {
     return restSelect<Publication>(
       'publications',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&order=created_at.desc'
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&order=created_at.desc'
     )
   },
 
@@ -84,7 +84,7 @@ export const publicationsService = {
   async getRecentPublications(limit = 5): Promise<Publication[]> {
     return restSelect<Publication>(
       'publications',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&published=eq.true&order=published_at.desc&limit=' + limit
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&published=eq.true&order=published_at.desc&limit=' + limit
     )
   },
 
@@ -140,7 +140,7 @@ export const publicationsService = {
   async getRecentPublicationsForDashboard(professorId: string, limit = 5): Promise<Publication[]> {
     return restSelect<Publication>(
       'publications',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + professorId +
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + professorId +
         '&order=created_at.desc&limit=' + limit
     )
   },

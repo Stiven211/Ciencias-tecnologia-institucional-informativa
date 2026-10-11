@@ -61,7 +61,7 @@ export const resourcesService = {
   async getResourceById(id: string): Promise<Resource> {
     const data = await restSelect<Resource>(
       'resources',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&id=eq.' + id + '&limit=1'
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&id=eq.' + id + '&limit=1'
     )
 
     if (!data[0]) throw new Error('Recurso no encontrado')
@@ -71,14 +71,14 @@ export const resourcesService = {
   async getMyResources(userId: string): Promise<Resource[]> {
     return restSelect<Resource>(
       'resources',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + userId + '&order=created_at.desc'
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + userId + '&order=created_at.desc'
     )
   },
 
   async getAllResources(): Promise<Resource[]> {
     return restSelect<Resource>(
       'resources',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&order=created_at.desc'
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&order=created_at.desc'
     )
   },
 
@@ -92,7 +92,7 @@ export const resourcesService = {
   async getRecentResources(limit = 5): Promise<Resource[]> {
     return restSelect<Resource>(
       'resources',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&order=created_at.desc&limit=' + limit
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&order=created_at.desc&limit=' + limit
     )
   },
 
@@ -152,7 +152,7 @@ export const resourcesService = {
   async getRecentResourcesForDashboard(professorId: string, limit = 5): Promise<Resource[]> {
     return restSelect<Resource>(
       'resources',
-      'select=*,professor:profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + professorId +
+      'select=*,professor:public_profiles(' + PROFESSOR_FIELDS + ')&professor_id=eq.' + professorId +
         '&order=created_at.desc&limit=' + limit
     )
   },

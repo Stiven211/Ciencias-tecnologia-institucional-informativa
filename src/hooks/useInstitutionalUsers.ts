@@ -1,14 +1,28 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import {
+  MAX_INSTITUTIONAL_USERS,
+  IS_REGISTRATION_LIMITED,
+  PUBLIC_REGISTRATION_ENABLED,
+} from '../config/institutional'
 
-const MAX_INSTITUTIONAL_USERS = 7
 const CHECK_TIMEOUT_MS = 5000
 
+/**
+ * When the config already settles the answer there is nothing to fetch, so the
+ * hook starts in its final state and never needs an effect to reach it.
+ */
+const NEEDS_REMOTE_CHECK = PUBLIC_REGISTRATION_ENABLED && IS_REGISTRATION_LIMITED
+
 export function useInstitutionalUsers() {
-  const [canRegister, setCanRegister] = useState<boolean | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [canRegister, setCanRegister] = useState<boolean | null>(
+    NEEDS_REMOTE_CHECK ? null : PUBLIC_REGISTRATION_ENABLED
+  )
+  const [loading, setLoading] = useState(NEEDS_REMOTE_CHECK)
 
   useEffect(() => {
+    if (!NEEDS_REMOTE_CHECK) return
+
     let cancelled = false
 
     const checkLimit = async () => {

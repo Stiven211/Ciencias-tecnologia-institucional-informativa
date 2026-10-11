@@ -57,7 +57,7 @@ export const projectsService = {
     professorId?: string
     page?: number
   }) {
-    const params: string[] = ['select=*,professor:profiles(' + PROFILE_FIELDS + ')']
+    const params: string[] = ['select=*,professor:public_profiles(' + PROFILE_FIELDS + ')']
 
     if (options?.professorId) {
       params.push('professor_id=eq.' + options.professorId)
@@ -89,7 +89,7 @@ export const projectsService = {
   async getProjectById(id: string): Promise<Project> {
     const data = await restSelect<Project>(
       'projects',
-      'select=*,professor:profiles(' + PROFILE_FIELDS + ')&id=eq.' + id + '&limit=1'
+      'select=*,professor:public_profiles(' + PROFILE_FIELDS + ')&id=eq.' + id + '&limit=1'
     )
 
     if (!data[0]) throw new Error('Proyecto no encontrado')
@@ -99,7 +99,7 @@ export const projectsService = {
   async getProjectsByProfessor(professorId: string): Promise<Project[]> {
     return restSelect<Project>(
       'projects',
-      'select=*,professor:profiles(' + PROFILE_FIELDS + ')&professor_id=eq.' + professorId + '&order=created_at.desc'
+      'select=*,professor:public_profiles(' + PROFILE_FIELDS + ')&professor_id=eq.' + professorId + '&order=created_at.desc'
     )
   },
 
@@ -170,7 +170,7 @@ export const projectsService = {
   async getRecentProjectsForDashboard(professorId: string, limit = 5): Promise<Project[]> {
     return restSelect<Project>(
       'projects',
-      'select=*,professor:profiles(' + PROFILE_FIELDS + ')&professor_id=eq.' + professorId +
+      'select=*,professor:public_profiles(' + PROFILE_FIELDS + ')&professor_id=eq.' + professorId +
         '&order=created_at.desc&limit=' + limit
     )
   },

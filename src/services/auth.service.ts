@@ -2,8 +2,7 @@ import type { User, Profile } from '../types'
 import { PERMISSIONS } from '../config/permissions'
 import { restSelect, restCount, restInsert, restAuthLogin, restAuthLogout, getAccessTokenFromStorage, restAuthSignUp, restAuthResetPassword, restAuthUpdatePassword } from '../utils/supabaseRest'
 import { withTimeout } from '../utils/fetchTimeout'
-
-const MAX_INSTITUTIONAL_USERS = 7
+import { MAX_INSTITUTIONAL_USERS, IS_REGISTRATION_LIMITED } from '../config/institutional'
 
 const buildUserFromProfile = (profile: Profile): User => ({
   id: profile.id,
@@ -42,14 +41,16 @@ function getCurrentUserId(): string | null {
 
 export const authService = {
   async getInstitutionalUsersCount(): Promise<number> {
-    return restCount('profiles', {}, { mode: 'anon' })
+    return restCount('public_profiles', {}, { mode: 'anon' })
   },
 
   async signUp(email: string, password: string, fullName: string): Promise<User | null> {
-    const count = await restCount('profiles', {}, { mode: 'anon' })
+    if (IS_REGISTRATION_LIMITED) {
+      const count = await restCount('public_profiles', {}, { mode: 'anon' })
 
-    if (count >= MAX_INSTITUTIONAL_USERS) {
-      throw new Error('Se alcanzo el limite de usuarios institucionales. Contacte al administrador.')
+      if (count >= MAX_INSTITUTIONAL_USERS) {
+        throw new Error('Se alcanzo el limite de usuarios institucionales. Contacte al administrador.')
+      }
     }
 
     const session = await restAuthSignUp(email, password)

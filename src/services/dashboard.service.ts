@@ -31,7 +31,7 @@ export const dashboardService = {
     const [projectsResult, resourcesResult, collaboratorsResult] = await Promise.allSettled([
       projectsService.getProjectCountsForDashboard(userId).then(r => r.total),
       resourcesService.getResourcesCountForDashboard(userId),
-      restCount('profiles', { role: 'eq.teacher', id: 'neq.' + userId }),
+      restCount('public_profiles', { role: 'eq.teacher', id: 'neq.' + userId }),
     ])
 
     return {
