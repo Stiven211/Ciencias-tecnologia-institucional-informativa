@@ -42,7 +42,14 @@ Variables de entorno (crear `.env`, nunca commitearlo):
 ```text
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-anon-key
+VITE_PUBLIC_REGISTRATION=false
+VITE_MAX_INSTITUTIONAL_USERS=7
 ```
+
+| Variable | Default | Qué hace |
+|---|---|---|
+| `VITE_PUBLIC_REGISTRATION` | `false` | Muestra el formulario de registro público. **No es una barrera de seguridad**: el registro real se controla con `disable_signup` en la config de auth de Supabase. |
+| `VITE_MAX_INSTITUTIONAL_USERS` | `7` | Tope de profesores. `0` = ilimitado (además desactiva el conteo en red). |
 
 Comandos:
 
@@ -68,12 +75,14 @@ src/
   pages/public/       # HomePage, ProjectsCatalogPage, PublicationsCatalogPage, ...
   pages/dashboard/    # DashboardHome, projects/resources/publications/activities/...
   components/         # layout, dashboard, public, ui reutilizable
-  services/           # capa de datos (projects, resources, publications, activities, auth, dashboard, public)
-  hooks/              # useDashboardStats, useDashboardData, useProjects, ...
+  services/           # capa de datos (projects, resources, publications, activities, auth, dashboard, public, teacher)
+  hooks/              # useDashboardStats, useDashboardData, useProjects, usePermissions, ...
   utils/supabaseRest.ts  # cliente REST directo (bypass LockManager en recargas F5)
   store/authStore.ts  # sesión persistida en sessionStorage
   config/permissions.ts  # roles y permisos
-supabase/             # schema, RLS y storage
+supabase/
+  migrations/         # migraciones aplicadas, en orden
+  functions/          # Edge Functions (create-teacher)
 tests/                # specs Playwright
 ```
 
