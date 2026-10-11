@@ -44,6 +44,7 @@ export const AdminDashboardPage = () => {
         }
 
         setProfessors(data)
+        if (countResult.status === 'fulfilled') setTotalItems(countResult.value)
       } else if (activeTab === 'projects') {
         const offset = (currentPage - 1) * itemsPerPage
         const queryString = `select=*,professor:profiles(full_name,email)&order=created_at.desc&limit=${itemsPerPage}&offset=${offset}`
@@ -62,6 +63,7 @@ export const AdminDashboardPage = () => {
         }
 
         setProjects(data)
+        if (countResult.status === 'fulfilled') setTotalItems(countResult.value)
       }
     } finally {
       if (requestId === requestIdRef.current) {
@@ -76,6 +78,25 @@ export const AdminDashboardPage = () => {
 
   const [roleError, setRoleError] = useState<string | null>(null)
   const [pendingInviteFlag, setPendingInviteFlag] = useState<string | null>(null)
+  const [totalItems, setTotalItems] = useState(0)
+
+  // La búsqueda se aplica sobre la página actual. Con 7-20 profesores no
+  // vale la pena paginar el resultado de un filtro: el problema real era que
+  // la caja no filtraba nada.
+  const matchesSearch = (haystack: (string | null | undefined)[]) => {
+    const term = searchTerm.trim().toLowerCase()
+    if (!term) return true
+    return haystack.some((v) => (v ?? '').toLowerCase().includes(term))
+  }
+
+  const filteredProfessors = professors.filter((p) =>
+    matchesSearch([p.full_name, p.email])
+  )
+  const filteredProjects = projects.filter((p) =>
+    matchesSearch([p.title, p.professor?.full_name])
+  )
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage))
 
   const toggleInvitePermission = async (id: string, canInvite: boolean) => {
     if (!user?.id) return
@@ -194,7 +215,7 @@ export const AdminDashboardPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-200">
-              {professors.map((p) => (
+              {filteredProfessors.map((p) => (
                 <tr key={p.id}>
                   <td className="px-6 py-4 text-sm font-medium text-navy-900">{p.full_name}</td>
                   <td className="px-6 py-4 text-sm text-navy-600">{p.email}</td>
@@ -230,6 +251,15 @@ export const AdminDashboardPage = () => {
                   </td>
                 </tr>
               ))}
+              {filteredProfessors.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-navy-500">
+                    {searchTerm.trim()
+                      ? `Ningún profesor coincide con "${searchTerm.trim()}".`
+                      : 'No hay profesores registrados.'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -247,7 +277,7 @@ export const AdminDashboardPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-200">
-              {projects.map((p) => (
+              {filteredProjects.map((p) => (
                 <tr key={p.id}>
                   <td className="px-6 py-4 text-sm font-medium text-navy-900">{p.title}</td>
                   <td className="px-6 py-4 text-sm text-navy-600">{p.professor?.full_name || 'N/A'}</td>
@@ -269,6 +299,15 @@ export const AdminDashboardPage = () => {
                   </td>
                 </tr>
               ))}
+              {filteredProjects.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center text-navy-500">
+                    {searchTerm.trim()
+                      ? `Ningún proyecto coincide con "${searchTerm.trim()}".`
+                      : 'No hay proyectos registrados.'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -277,8 +316,10 @@ export const AdminDashboardPage = () => {
       <div className="mt-6">
         <Pagination
           currentPage={currentPage}
-          totalPages={10}
+          totalPages={totalPages}
           onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
         />
       </div>
     </div>

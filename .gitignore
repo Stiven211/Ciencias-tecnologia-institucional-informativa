@@ -40,3 +40,5 @@ blob-report/
 # Supabase CLI (cache local del proyecto enlazado)
 supabase/.temp/
 supabase/.branches/
+# QA visual
+qa-screens/
