@@ -7,11 +7,14 @@ import { Button } from '../ui/Button'
 import { AvatarUpload } from '../ui/AvatarUpload'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import { profileService } from '../../services/profile.service'
+import { TEACHING_AREAS, ACADEMIC_LEVELS } from '../../config/academicProfile'
 
 interface ProfileFormValues {
   full_name: string
   bio: string
   specialization: string
+  teaching_area: string
+  academic_level: string
 }
 
 export const ProfileEditor = () => {
@@ -20,6 +23,8 @@ export const ProfileEditor = () => {
     full_name: profile?.full_name ?? '',
     bio: profile?.bio ?? '',
     specialization: profile?.specialization ?? '',
+    teaching_area: profile?.teaching_area ?? '',
+    academic_level: profile?.academic_level ?? '',
   })
 
   const [loading, setLoading] = useState(false)
@@ -49,6 +54,8 @@ export const ProfileEditor = () => {
         full_name: values.full_name,
         bio: values.bio,
         specialization: values.specialization,
+        teaching_area: values.teaching_area || null,
+        academic_level: values.academic_level || null,
         avatar_url: avatarUrl,
       })
 
@@ -131,6 +138,50 @@ export const ProfileEditor = () => {
               placeholder="Ej: Física Cuántica, Biología Molecular, etc."
             />
           </div>
+
+          <div>
+            <label
+              htmlFor="teaching_area"
+              className="block text-sm font-medium text-navy-700 mb-1"
+            >
+              Área que dicta
+            </label>
+            <select
+              id="teaching_area"
+              value={values.teaching_area}
+              onChange={(e) => handleChange('teaching_area', e.target.value)}
+              className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2 text-navy-900 focus:border-navy-500 focus:outline-none focus:ring-1 focus:ring-navy-500"
+            >
+              <option value="">Sin definir</option>
+              {TEACHING_AREAS.map((area) => (
+                <option key={area} value={area}>
+                  {area}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="academic_level"
+              className="block text-sm font-medium text-navy-700 mb-1"
+            >
+              Nivel académico
+            </label>
+            <select
+              id="academic_level"
+              value={values.academic_level}
+              onChange={(e) => handleChange('academic_level', e.target.value)}
+              className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2 text-navy-900 focus:border-navy-500 focus:outline-none focus:ring-1 focus:ring-navy-500"
+            >
+              <option value="">Sin definir</option>
+              {ACADEMIC_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -147,6 +198,8 @@ export const ProfileEditor = () => {
                   full_name: profile.full_name ?? '',
                   bio: profile.bio ?? '',
                   specialization: profile.specialization ?? '',
+                  teaching_area: profile.teaching_area ?? '',
+                  academic_level: profile.academic_level ?? '',
                 })
                 setAvatarUrl(profile.avatar_url ?? null)
               }

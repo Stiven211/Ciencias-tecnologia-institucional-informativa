@@ -13,7 +13,7 @@ export const publicService = {
       .from('projects')
       .select(`
         *,
-        professor:profiles(full_name, avatar_url)
+        professor:public_profiles(full_name, avatar_url)
       `)
       .eq('status', 'published')
       .limit(3)
@@ -28,7 +28,7 @@ export const publicService = {
       .from('projects')
       .select(`
         *,
-        professor:profiles(full_name, avatar_url)
+        professor:public_profiles(full_name, avatar_url)
       `)
       .eq('status', 'published')
 
@@ -56,7 +56,7 @@ export const publicService = {
       .from('projects')
       .select(`
         *,
-        professor:profiles(full_name, avatar_url, specialization)
+        professor:public_profiles(full_name, avatar_url, specialization, teaching_area, academic_level)
       `)
       .eq('slug', slug)
       .eq('status', 'published')
@@ -71,7 +71,7 @@ export const publicService = {
       .from('projects')
       .select(`
         *,
-        professor:profiles(full_name, avatar_url)
+        professor:public_profiles(full_name, avatar_url)
       `)
       .eq('status', 'published')
       .neq('id', projectId)
@@ -107,7 +107,7 @@ export const publicService = {
       .from('projects')
       .select(`
         *,
-        professor:profiles(id, full_name, avatar_url)
+        professor:public_profiles(id, full_name, avatar_url)
       `)
       .eq('professor_id', professorId)
       .eq('status', 'published')
@@ -122,7 +122,7 @@ export const publicService = {
       .from('publications')
       .select(`
         *,
-        professor:profiles(id, full_name, avatar_url)
+        professor:public_profiles(id, full_name, avatar_url)
       `)
       .eq('published', true)
       .order('created_at', { ascending: false })
@@ -136,7 +136,7 @@ export const publicService = {
       .from('publications')
       .select(`
         *,
-        professor:profiles(id, full_name, avatar_url)
+        professor:public_profiles(id, full_name, avatar_url)
       `)
       .eq('id', id)
       .eq('published', true)

@@ -7,11 +7,11 @@ import { PublicLayout } from '../../components/layout/PublicLayout'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Skeleton, SkeletonCard } from '../../components/ui/Skeleton'
 import { BookOpen } from 'lucide-react'
-import type { Profile, Project } from '../../types'
+import type { PublicProfile, Project } from '../../types'
 
 export const ProfessorProfilePage = () => {
   const { id } = useParams<{ id: string }>()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -22,7 +22,7 @@ export const ProfessorProfilePage = () => {
       setLoading(true)
       try {
         const [profileData, projectsData] = await Promise.all([
-          profileService.getProfileById(id),
+          profileService.getPublicProfileById(id),
           publicService.getPublishedProjectsByProfessor(id),
         ])
 
@@ -101,6 +101,21 @@ export const ProfessorProfilePage = () => {
                 <span className="inline-block mt-3 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs sm:text-sm font-medium">
                   {profile.specialization}
                 </span>
+              )}
+
+              {(profile.teaching_area || profile.academic_level) && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {profile.teaching_area && (
+                    <span className="inline-block px-3 py-1 bg-navy-100 text-navy-800 rounded-full text-xs sm:text-sm font-medium">
+                      {profile.teaching_area}
+                    </span>
+                  )}
+                  {profile.academic_level && (
+                    <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs sm:text-sm font-medium">
+                      {profile.academic_level}
+                    </span>
+                  )}
+                </div>
               )}
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-navy-200">

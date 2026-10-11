@@ -1,4 +1,5 @@
 import type { UserRole, Permission } from '../config/permissions'
+import type { TeachingArea, AcademicLevel } from '../config/academicProfile'
 
 export interface Profile {
   id: string
@@ -8,8 +9,22 @@ export interface Profile {
   avatar_url: string | null
   bio: string | null
   specialization: string | null
+  teaching_area: TeachingArea | null
+  academic_level: AcademicLevel | null
+  can_invite_teachers: boolean
   created_at: string
   updated_at: string
+}
+
+export interface PublicProfile {
+  id: string
+  full_name: string
+  avatar_url: string | null
+  bio: string | null
+  specialization: string | null
+  teaching_area: TeachingArea | null
+  academic_level: AcademicLevel | null
+  role: UserRole
 }
 
 export interface Project {

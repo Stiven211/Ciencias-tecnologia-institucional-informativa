@@ -1,10 +1,12 @@
-import type { Profile, UserRole } from '../types'
+import type { Profile, PublicProfile, UserRole } from '../types'
 import { restSelect, restUpdate } from '../utils/supabaseRest'
 
 export interface ProfileUpdateInput {
   full_name?: string
   bio?: string | null
   specialization?: string | null
+  teaching_area?: string | null
+  academic_level?: string | null
   avatar_url?: string | null
   [key: string]: string | null | undefined
 }
@@ -24,6 +26,8 @@ export const profileService = {
     if (data.full_name !== undefined) payload.full_name = data.full_name
     if (data.bio !== undefined) payload.bio = data.bio
     if (data.specialization !== undefined) payload.specialization = data.specialization
+    if (data.teaching_area !== undefined) payload.teaching_area = data.teaching_area
+    if (data.academic_level !== undefined) payload.academic_level = data.academic_level
     if (data.avatar_url !== undefined) payload.avatar_url = data.avatar_url
 
     if (Object.keys(payload).length === 0) {
@@ -46,6 +50,25 @@ export const profileService = {
       throw new Error('Identificador de usuario invalido.')
     }
     const rows = await restSelect<Profile>('profiles', 'select=*&id=eq.' + id + '&limit=1')
+    if (!rows[0]) {
+      throw new Error('No se pudo cargar el perfil.')
+    }
+    return rows[0]
+  },
+
+  /**
+   * Public read. `profiles` is private (owner + admins only) since the
+   * 2026-10-10 migration, so anything rendered on the public site has to go
+   * through the `public_profiles` view, which omits `email` by construction.
+   */
+  async getPublicProfileById(id: string): Promise<PublicProfile> {
+    if (!id) {
+      throw new Error('Identificador de usuario invalido.')
+    }
+    const rows = await restSelect<PublicProfile>(
+      'public_profiles',
+      'select=*&id=eq.' + id + '&limit=1'
+    )
     if (!rows[0]) {
       throw new Error('No se pudo cargar el perfil.')
     }
