@@ -34,7 +34,7 @@ const fallbackStats = [
 export const DashboardStatsGrid = ({ stats, loading }: DashboardStatsGridProps) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {[1, 2, 3].map((_, index) => (
           <StatsCard
             key={index}
@@ -72,7 +72,7 @@ export const DashboardStatsGrid = ({ stats, loading }: DashboardStatsGridProps) 
     : fallbackStats
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
       {statsToRender.map((stat) => (
         <StatsCard key={stat.title} {...stat} />
       ))}

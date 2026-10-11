@@ -35,22 +35,22 @@ export const Navbar = ({ onOpenSidebar }: NavbarProps) => {
           {onOpenSidebar && (
             <button
               onClick={onOpenSidebar}
-              className="lg:hidden p-2 rounded-lg text-navy-600 hover:bg-navy-100"
+              className="lg:hidden -ml-1 flex items-center justify-center w-11 h-11 shrink-0 rounded-lg text-navy-600 hover:bg-navy-100 transition-colors"
               aria-label="Abrir menú"
             >
-              <Menu size={20} />
+              <Menu size={22} />
             </button>
           )}
-          <form onSubmit={submitSearch} className="flex-1">
+          <form onSubmit={submitSearch} className="flex-1 min-w-0">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" size={20} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none" size={18} />
               <input
                 type="search"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Buscar proyectos..."
                 aria-label="Buscar proyectos"
-                className="w-full pl-10 pr-4 py-2 border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full min-w-0 pl-9 pr-3 py-2 text-sm sm:text-base border border-navy-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
           </form>

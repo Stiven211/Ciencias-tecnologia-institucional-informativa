@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState, useEffect } from 'react'
+import { Upload } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { projectsService } from '../../services/projects.service'
@@ -218,14 +219,32 @@ export const ProjectForm = ({ project, onSuccess }: ProjectFormProps) => {
           <label className="block text-sm font-medium text-navy-700 mb-1">
             Imagen de portada
           </label>
+          {/* El input de archivo crudo pinta el boton del sistema pegado al
+              texto "Ningun archivo seleccionado" y se ve roto. Este control
+              muestra el estado del archivo en un solo bloque coherente. */}
+          <label
+            htmlFor="cover-image"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-navy-300 rounded-lg bg-navy-50/50 text-sm text-navy-600 cursor-pointer hover:border-navy-400 hover:bg-navy-50 transition-colors"
+          >
+            <Upload size={18} className="shrink-0" />
+            <span className="truncate">
+              {coverImage ? coverImage.name : 'Seleccionar imagen de portada'}
+            </span>
+          </label>
           <input
+            id="cover-image"
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            className="w-full px-3 py-2 border border-navy-300 rounded-lg"
+            className="sr-only"
           />
+          <p className="mt-1 text-xs text-navy-500">
+            {coverImage
+              ? 'Se sube al guardar el proyecto.'
+              : 'JPG o PNG. Se mostrará en el catálogo público.'}
+          </p>
           {previewUrl && (
-            <img src={previewUrl} alt="Preview" className="mt-2 h-32 object-cover rounded-lg" />
+            <img src={previewUrl} alt="Vista previa de la imagen de portada" className="mt-2 h-32 w-full object-cover rounded-lg" />
           )}
         </div>
 

@@ -1,6 +1,8 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import React from 'react'
+import { AlertCircle } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../components/ui/ToastContext'
@@ -15,10 +17,31 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>
 
+/**
+ * Supabase responde "Invalid login credentials" a propósito, para no revelar
+ * si el correo existe. Para quien lo lee es un mensaje opaco, asi que se
+ * traduce. El toast solo se usaba y se desvanecía a los pocos segundos: el
+ * error queda tambien en linea, que es donde la gente lo busca.
+ */
+const friendlyMessage = (raw: string): string => {
+  const lower = raw.toLowerCase()
+  if (lower.includes('invalid login credentials') || lower.includes('invalid_credentials')) {
+    return 'Correo o contraseña incorrectos. Verifica los datos e inténtalo de nuevo.'
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'Tu cuenta aún no está confirmada. Revisa el correo que te enviamos.'
+  }
+  if (lower.includes('fetch') || lower.includes('network')) {
+    return 'No pudimos conectar con el servidor. Revisa tu conexión a internet.'
+  }
+  return raw
+}
+
 export const LoginPage = () => {
   const navigate = useNavigate()
   const { login, loading, error } = useAuth()
   const { success, error: showError } = useToast()
+  const [submitError, setSubmitError] = React.useState<string | null>(null)
 
   const {
     register,
@@ -29,15 +52,19 @@ export const LoginPage = () => {
   })
 
   const onSubmit = async (data: LoginFormData) => {
+    setSubmitError(null)
     try {
-      await login(data.email, data.password)
+      // El trim no es cosmetico: un espacio pegado al pegar produce un
+      // "Invalid login credentials" sin explicacion util.
+      await login(data.email.trim(), data.password.trim())
       success('¡Bienvenido!', 'Has iniciado sesión correctamente')
       navigate('/dashboard')
     } catch (err) {
-      showError(
-        'Error al iniciar sesión',
+      const message = friendlyMessage(
         err instanceof Error ? err.message : 'Credenciales inválidas'
       )
+      setSubmitError(message)
+      showError('Error al iniciar sesión', message)
     }
   }
 
@@ -56,6 +83,7 @@ export const LoginPage = () => {
               type="email"
               icon={<Mail size={18} />}
               placeholder="tu@email.com"
+              autoComplete="email"
               error={errors.email?.message}
               {...register('email')}
             />
@@ -65,12 +93,19 @@ export const LoginPage = () => {
               type="password"
               icon={<Lock size={18} />}
               placeholder="••••••••"
+              autoComplete="current-password"
               error={errors.password?.message}
               {...register('password')}
             />
 
-            {error && (
-              <p className="text-sm text-red-600">{error}</p>
+            {(submitError || error) && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
+              >
+                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                <span>{submitError || error}</span>
+              </div>
             )}
 
             <Button
