@@ -47,13 +47,17 @@ export const ActivityCard = ({ activity, onDelete }: ActivityCardProps) => {
             <div className="flex items-center space-x-2">
               <Link
                 to={`/dashboard/activities/${activity.id}/edit`}
-                className="p-1.5 rounded-lg hover:bg-navy-100 text-navy-600"
+                aria-label="Editar"
+                title="Editar"
+                className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-navy-100 text-navy-600 transition-colors"
               >
                 <Edit size={16} />
               </Link>
               <button
                 onClick={() => onDelete(activity)}
-                className="p-1.5 rounded-lg hover:bg-red-50 text-red-600"
+                aria-label="Eliminar"
+                title="Eliminar"
+                className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
               >
                 <Trash2 size={16} />
               </button>
