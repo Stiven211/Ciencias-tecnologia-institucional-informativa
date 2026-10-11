@@ -1,19 +1,75 @@
 name: Supabase keep-alive
 
+# Por que existe esto:
+# Supabase pausa los proyectos del plan Free tras 7 dias de baja actividad.
+# Segun la documentacion, lo que cuenta son "user database queries", y
+# "a few user requests to the database each day" bastan para evitarlo. Un GET
+# a /rest/v1 pasa por PostgREST y llega a Postgres, asi que cuenta.
+#
+# Lo que este workflow NO hacia bien:
+#   - corria cada 2 dias, y la documentacion habla de "cada dia". Con una
+#     corrida fallida te quedabas con un hueco de 4 dias.
+#   - una falla dejaba el job en rojo y nadie se enteraba. El riesgo real no
+#     es que falle, es no enterarse de que fallo.
+#   - el ping a Vercel no generaba actividad en la base: era ruido.
+
 on:
   schedule:
-    - cron: '0 12 */2 * *'
+    # Tres horarios separados a proposito. Si una corrida se cae (incidente de
+    # GitHub, red), las otras dos del dia siguen dando senal.
+    - cron: '17 6 * * *'
+    - cron: '43 12 * * *'
+    - cron: '23 19 * * *'
   workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
-    steps:
-      - name: Ping Supabase REST API
-        run: |
-          curl -f -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/projects?select=id&limit=1"
+    timeout-minutes: 5
 
-      - name: Ping Vercel frontend
-        run: curl -f -o /dev/null https://ciencias-tecnologia-institucional-i.vercel.app/
+    steps:
+      - name: Verificar que los secrets existen
+        run: |
+          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "::error::Faltan los secrets SUPABASE_URL o SUPABASE_ANON_KEY en el repo."
+            echo "::error::Settings > Secrets and variables > Actions > New repository secret"
+            exit 1
+          fi
+          echo "Secrets presentes."
+
+      # Cada query pega a una tabla distinta y falla por separado: asi un
+      # SELECT mal formado no se come el resto de la senal del dia.
+      - name: Query a profiles (vía public_profiles)
+        run: |
+          code=$(curl -s -o /tmp/p.json -w '%{http_code}' --max-time 20 \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/public_profiles?select=id&limit=1")
+          echo "HTTP $code"
+          cat /tmp/p.json
+          [ "$code" = "200" ] || { echo "::error::Query a public_profiles devolvio $code"; exit 1; }
+
+      - name: Query a projects
+        run: |
+          code=$(curl -s -o /tmp/r.json -w '%{http_code}' --max-time 20 \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/projects?select=id&limit=1")
+          echo "HTTP $code"
+          cat /tmp/r.json
+          [ "$code" = "200" ] || { echo "::error::Query a projects devolvio $code"; exit 1; }
+
+      # El ping a la API de auth tambien pasa por el proyecto. Si el proyecto
+      # esta pausado, esto es lo primero que se cae.
+      - name: Verificar que el proyecto responde
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/auth/v1/health")
+          echo "HTTP $code"
+          if [ "$code" = "503" ] || [ "$code" = "502" ]; then
+            echo "::error::El proyecto parece PAUSADO. Reactivalo en el dashboard."
+          elif [ "$code" != "200" ]; then
+            echo "::error::La API de auth devolvio $code"
+          fi
+          [ "$code" = "200" ]
