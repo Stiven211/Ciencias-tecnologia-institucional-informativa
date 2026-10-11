@@ -15,11 +15,14 @@ interface SidebarProps {
 export const Sidebar = ({ onNavigate }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
-  const { user, hasPermission, hasRole } = useAuthStore()
+  const { user, profile, hasPermission, hasRole } = useAuthStore()
+
+  const canInviteTeachers = user?.role === 'admin' || profile?.can_invite_teachers === true
 
   const visibleNav = navigation.filter(item => {
     if (!hasPermission(item.permission)) return false
     if (item.roles && !hasRole(item.roles)) return false
+    if (item.requiresInviteFlag && !canInviteTeachers) return false
     return true
   })
 

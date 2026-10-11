@@ -3,6 +3,7 @@ import {
   FolderOpen,
   Shield,
   User,
+  UserPlus,
   FileText,
   BookOpen,
   Calendar
@@ -15,6 +16,8 @@ export interface NavItem {
   icon: React.ElementType
   permission: Permission
   roles?: UserRole[]
+  /** Visible solo para admins o para perfiles con can_invite_teachers. */
+  requiresInviteFlag?: boolean
 }
 
 export const navigation: NavItem[] = [
@@ -60,5 +63,12 @@ export const navigation: NavItem[] = [
     icon: Shield, 
     permission: 'manage_all_projects',
     roles: ['admin']
+  },
+  {
+    name: 'Registrar profesor',
+    href: '/dashboard/teachers/new',
+    icon: UserPlus,
+    permission: 'view_public_content',
+    requiresInviteFlag: true,
   },
 ]

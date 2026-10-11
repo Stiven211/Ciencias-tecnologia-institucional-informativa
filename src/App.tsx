@@ -7,6 +7,7 @@ import { CreateProjectPage } from './pages/dashboard/projects/CreateProjectPage'
 import { EditProjectPage } from './pages/dashboard/projects/EditProjectPage'
 import { ProjectDetailPage } from './pages/dashboard/projects/ProjectDetailPage'
 import { AdminDashboardPage } from './pages/dashboard/AdminDashboardPage'
+import { NewTeacherPage } from './pages/dashboard/teachers/NewTeacherPage'
 import { ResourcesPage } from './pages/dashboard/resources/ResourcesPage'
 import { CreateResourcePage } from './pages/dashboard/resources/CreateResourcePage'
 import { EditResourcePage } from './pages/dashboard/resources/EditResourcePage'
@@ -67,6 +68,7 @@ function App() {
                <Route path="resources" element={<ResourcesPage />} />
                <Route path="publications" element={<PublicationsPage />} />
                <Route path="activities" element={<ActivitiesPage />} />
+               <Route path="teachers/new" element={<NewTeacherPage />} />
                <Route 
                 path="projects/new" 
                 element={

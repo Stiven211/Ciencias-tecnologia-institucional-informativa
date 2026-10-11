@@ -3,6 +3,7 @@ import type { Permission, UserRole } from '../config/permissions'
 
 export const usePermissions = () => {
   const user = useAuthStore((state) => state.user)
+  const profile = useAuthStore((state) => state.profile)
   const hasPermission = useAuthStore((state) => state.hasPermission)
   const hasRole = useAuthStore((state) => state.hasRole)
   const isOwner = useAuthStore((state) => state.isOwner)
@@ -32,6 +33,17 @@ export const usePermissions = () => {
     return user?.role === 'visitor' || !user
   }
 
+  /**
+   * F1. Delegación explícita, independiente del rol: un admin siempre puede
+   * invitar, y además pueden hacerlo los profesores con
+   * `can_invite_teachers = true`. La Edge Function aplica la misma regla en
+   * el servidor; esto solo decide qué se muestra en la interfaz.
+   */
+  const canInviteTeachers = (): boolean => {
+    if (user?.role === 'admin') return true
+    return profile?.can_invite_teachers === true
+  }
+
   return {
     can,
     hasRole: checkRole,
@@ -39,6 +51,7 @@ export const usePermissions = () => {
     isAdmin,
     isTeacher,
     isVisitor,
+    canInviteTeachers,
     permissions: user?.permissions || [],
     role: user?.role,
     userId: user?.id,
